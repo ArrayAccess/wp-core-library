@@ -5,6 +5,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service;
 
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
+use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
@@ -30,26 +31,37 @@ final class Services implements ServicesInterface
     private array $services = [];
 
     /**
+     * The queued services that contain class name & not yet created.
+     *
      * @var array <class-string<ObjectService>, class-string<ObjectService>>
      */
     private array $queuedServices = [];
 
+    /**
+     * List of core services.
+     *
+     * @var array<class-string<ObjectService>, true>
+     */
     private array $coreService = [];
 
     /**
-     * @var array<string, false|string>
+     * Class map of service class name as cache
+     *
+     * @var array<string, false|string> false if not yet checked, string if valid class name
      */
     private static array $classMap = [];
 
     /**
      * Default services list.
+     *
      * @var array<class-string<ObjectService>>
      */
     public const DEFAULT_SERVICES = [
         Database::class,
         Hooks::class,
         Option::class,
-        StatelessCookie::class
+        StatelessCookie::class,
+        AdminMenu::class
     ];
 
     /**
@@ -98,6 +110,12 @@ final class Services implements ServicesInterface
         return self::$classMap[$serviceId]?:null;
     }
 
+    /**
+     * Get service id from service class name or object
+     *
+     * @param string|ServiceInterface $service
+     * @return string|null
+     */
     private function getServiceId(string|ServiceInterface $service) : ?string
     {
         $serviceId = $this->getServiceClassName($service);
@@ -165,25 +183,29 @@ final class Services implements ServicesInterface
     public function remove(ServiceInterface|string $service) : bool
     {
         $serviceId = $this->getServiceId($service);
+        // ignore invalid service
         if (!$serviceId) {
             return false;
         }
-        /**
-         * If the service is core service, do not remove
-         */
+
+        // If the service is a core service, do not remove
         if (isset($this->coreService[$serviceId])) {
             return false;
         }
 
+        // check first if argument is class name,
+        // when the argument is an object ignore the string checking
         if (isset($this->services[$serviceId])
             || isset($this->queuedServices[$serviceId])
         ) {
+            // remove from services & queued services
             unset(
                 $this->services[$serviceId],
                 $this->queuedServices[$serviceId]
             );
             return true;
         }
+
         return false;
     }
 
@@ -193,9 +215,11 @@ final class Services implements ServicesInterface
     public function contain(ServiceInterface|string $service): bool
     {
         $serviceId = $this->getServiceClassName($service);
+        // ignore invalid service
         if (!$serviceId) {
             return false;
         }
+        // If service object, check if the service is in the services
         return in_array($service, $this->services, true) || (
             in_array($serviceId, $this->queuedServices, true)
         );
@@ -208,12 +232,15 @@ final class Services implements ServicesInterface
     public function get(string|ServiceInterface $service): ?ServiceInterface
     {
         $serviceId = $this->getServiceId($service);
+        // ignore invalid service
         if (!$serviceId) {
             return null;
         }
+        // If service object, check if the service is in the services
         if (isset($this->services[$serviceId])) {
             return $this->services[$serviceId];
         }
+        // If service is in the queued services, create the service
         if (isset($this->queuedServices[$serviceId])) {
             $service = $this->queuedServices[$serviceId];
             unset($this->queuedServices[$serviceId]);
@@ -221,6 +248,7 @@ final class Services implements ServicesInterface
                 return $this->services[$serviceId] = new $service($this);
             }
         }
+        // If service is not in the services, return null
         return null;
     }
 
@@ -229,6 +257,7 @@ final class Services implements ServicesInterface
      */
     public function getServices(): array
     {
+        // create all queued services
         foreach ($this->queuedServices as $item) {
             $this->get($item);
         }

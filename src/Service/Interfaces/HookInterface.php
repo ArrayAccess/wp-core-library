@@ -22,7 +22,7 @@ interface HookInterface extends ServiceInterface, Countable
 
     public function current() : ?string;
 
-    public function apply(string $name, mixed $value, mixed ...$args) : mixed;
+    public function apply(string $name, mixed $value = null, mixed ...$args) : mixed;
 
     /**
      * Get lists of hook names

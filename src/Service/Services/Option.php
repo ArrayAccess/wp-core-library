@@ -9,7 +9,7 @@ use function delete_option;
 use function is_array;
 
 /**
- * Option service to create and manage options
+ * Option service to create and manage options with object oriented itself.
  */
 class Option extends AbstractService
 {
@@ -24,19 +24,51 @@ class Option extends AbstractService
     private string $optionName = 'array-access_wp_libraries_core_options';
 
     /**
+     * The options.
      * @var ?array<string, mixed> The options.
      */
     private ?array $options = null;
 
+    /**
+     * The original options.
+     *
+     * @var array|null
+     */
     private ?array $originalOptions;
 
+    /**
+     * @var bool The changed flag.
+     */
     private bool $changed = false;
 
+    /**
+     * @inheritdoc
+     */
+    protected function onConstruct(): void
+    {
+        $this->description = __(
+            'Option service to create and manage options with object oriented itself.',
+            'arrayaccess'
+        );
+    }
+
+    /**
+     * Get option name
+     *
+     * @return string The option name.
+     */
     public function getOptionName(): string
     {
         return $this->optionName;
     }
 
+    /**
+     * Set option name to get / set of options.
+     *
+     * @param string $optionName
+     * @param bool $useCurrent
+     * @return void
+     */
     public function setOptionName(
         string $optionName,
         bool $useCurrent = false
@@ -50,6 +82,8 @@ class Option extends AbstractService
     }
 
     /**
+     * Get options
+     *
      * @return array
      */
     public function getOptions(): array
@@ -65,6 +99,11 @@ class Option extends AbstractService
         return $this->options = $options;
     }
 
+    /**
+     * Restore the original options.
+     *
+     * @return void
+     */
     public function restoreOptions(): void
     {
         if ($this->options === null) {
@@ -74,6 +113,8 @@ class Option extends AbstractService
     }
 
     /**
+     * Initialize the options.
+     *
      * @return $this
      */
     private function init() : static
@@ -138,6 +179,7 @@ class Option extends AbstractService
 
     /**
      * Delete option
+     * @return bool true if deleted
      */
     public function destroy(): bool
     {
@@ -149,7 +191,7 @@ class Option extends AbstractService
     /**
      * Save options
      *
-     * @return bool
+     * @return bool true if saved
      */
     public function save(): bool
     {
@@ -166,6 +208,7 @@ class Option extends AbstractService
 
     /**
      * Class destructor
+     * Operation save will be executed if the options changed.
      */
     public function __destruct()
     {

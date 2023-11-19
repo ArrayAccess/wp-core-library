@@ -8,6 +8,9 @@ use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
 use function basename;
 use function str_replace;
 
+/**
+ * AbstractService class that help to create service of various service objects.
+ */
 abstract class AbstractService implements ServiceInterface
 {
     /**
@@ -16,10 +19,25 @@ abstract class AbstractService implements ServiceInterface
     protected string $serviceName;
 
     /**
+     * @var string|null The service description.
+     */
+    protected ?string $description = null;
+
+
+    /**
      * Service constructor.
      */
-    public function __construct(protected ServicesInterface $services)
+    final public function __construct(protected ServicesInterface $services)
     {
+        $this->onConstruct();
+    }
+
+    /**
+     * Method that will be called on construct.
+     */
+    protected function onConstruct()
+    {
+        // pass
     }
 
     /**
@@ -36,5 +54,13 @@ abstract class AbstractService implements ServiceInterface
     public function getServiceName(): string
     {
         return $this->serviceName ??= basename(str_replace('', '/', static::class));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
     }
 }

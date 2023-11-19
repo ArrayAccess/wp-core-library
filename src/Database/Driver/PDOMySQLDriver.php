@@ -30,8 +30,8 @@ class PDOMySQLDriver extends AbstractMySQLDriver
         }
     }
 
-    /** 
-     * @inheritdoc 
+    /**
+     * @inheritdoc
      */
     public function connect(array $params): Connection
     {

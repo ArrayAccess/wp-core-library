@@ -28,4 +28,11 @@ interface ServiceInterface
      * @return string
      */
     public function getServiceName() : string;
+
+    /**
+     * Service description
+     *
+     * @return ?string null if not set
+     */
+    public function getDescription(): ?string;
 }

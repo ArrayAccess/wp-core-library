@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\HookInterface;
 use WP_Hook;
+use function __;
 use function _wp_filter_build_unique_id;
 use function array_keys;
 use function array_pop;
@@ -14,6 +15,8 @@ use function end;
 use function in_array;
 
 /**
+ * Service hook that helps to handle the hooks outside of core WordPress hooks.
+ *
  * @uses WP_Hook
  * This object does not support 'all' hook name
  */
@@ -39,6 +42,17 @@ class Hooks extends AbstractService implements HookInterface
      * @var array<string>
      */
     private array $currents = [];
+
+    /**
+     * @inheritdoc
+     */
+    protected function onConstruct(): void
+    {
+        $this->description = __(
+            'Service hook that helps to handle the hooks outside of core WordPress hooks.',
+            'arrayaccess'
+        );
+    }
 
     /**
      * Add a hook
@@ -182,7 +196,7 @@ class Hooks extends AbstractService implements HookInterface
      *
      * @return mixed
      */
-    public function apply(string $name, mixed $value, mixed ...$args): mixed
+    public function apply(string $name, mixed $value = null, mixed ...$args): mixed
     {
         $this->actions[$name] ??= 0;
         $this->actions[$name]++;

@@ -12,7 +12,7 @@ use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Statement;
 
 /**
- * The object database is mixin between connection via magic method
+ * The service that handle database connection with Doctrine Database Abstraction Layer.
  *
  * @mixin Connection
  */
@@ -26,6 +26,17 @@ final class Database extends AbstractService implements DatabaseInterface
      * @var Connection
      */
     private Connection $connection;
+
+    /**
+     * @inheritdoc
+     */
+    protected function onConstruct(): void
+    {
+        $this->description = __(
+            'The service that handle database connection with Doctrine Database Abstraction Layer.',
+            'arrayaccess'
+        );
+    }
 
     /**
      * @return Connection

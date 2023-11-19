@@ -48,10 +48,10 @@ trait AdminMenuTrait
      * @param ?int $position
      */
     public function __construct(
-        string $slug,
         string $menuTitle,
         string $pageTitle,
-        string $capability = MenuPageInterface::DEFAULT_CAPABILITY,
+        string $capability,
+        string $slug,
         string $iconUrl = '',
         ?int $position = null
     ) {

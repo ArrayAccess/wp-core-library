@@ -108,10 +108,10 @@ interface MenuPageInterface
     ];
 
     public function __construct(
-        string $slug,
         string $menuTitle,
         string $pageTitle,
-        string $capability = self::DEFAULT_CAPABILITY,
+        string $capability,
+        string $slug,
         string $iconUrl = '',
         ?int $position = null
     );

@@ -31,9 +31,9 @@ class SubMenuPage implements SubMenuPagePageInterface
     /**
      * @inheritdoc
      */
-    public function getRenderer(): MenuPageRendererInterface
+    public function getRenderer(): ?MenuPageRendererInterface
     {
-        return $this->renderer;
+        return $this->renderer??null;
     }
 
     /**
@@ -50,8 +50,8 @@ class SubMenuPage implements SubMenuPagePageInterface
             $this->getCapability(),
             $this->getSlug(),
             function () {
-                $this->renderer->render($this);
+                $this->getRenderer()?->render($this);
             }
-        );
+        )?:null;
     }
 }

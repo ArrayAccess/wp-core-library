@@ -17,9 +17,9 @@ interface SubMenuPagePageInterface extends MenuPageInterface
     /**
      * Get the renderer.
      *
-     * @return MenuPageRendererInterface
+     * @return ?MenuPageRendererInterface
      */
-    public function getRenderer(): MenuPageRendererInterface;
+    public function getRenderer(): ?MenuPageRendererInterface;
 
     /**
      * Register the menu page.

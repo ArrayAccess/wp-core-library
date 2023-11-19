@@ -56,6 +56,11 @@ class AdminRootMenu
         return $this->menu;
     }
 
+    public function getSlug(): string
+    {
+        return $this->menu->getSlug();
+    }
+
     /**
      * Add a submenu page.
      *

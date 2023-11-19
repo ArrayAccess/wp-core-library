@@ -1,0 +1,47 @@
+{
+    "name": "arrayaccess/wp-core-library",
+    "description": "WP Core Library for better WordPress development.",
+    "keywords": [
+        "WordPress"
+    ],
+    "type": "library",
+    "license": [
+        "LGPL-3.0-or-later"
+    ],
+    "require": {
+        "php": ">= 8.0",
+        "ext-pdo_mysql": "*",
+        "ext-mysqli": "*",
+        "doctrine/dbal": "~3.7.1"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "3.7.2",
+        "slevomat/coding-standard": "^8.14",
+        "phpunit/phpunit": "^10.4",
+        "phpstan/phpstan": "^1.10"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "autoload": {
+        "psr-0": {
+            "ArrayAccess\\WP\\Libraries\\Core\\": "src"
+        },
+        "psr-4": {
+            "ArrayAccess\\WP\\Libraries\\Core\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-0": {
+            "ArrayAccess\\WP\\Libraries\\Core\\": "src",
+            "ArrayAccess\\WP\\Tests\\Libraries\\Core\\": "tests"
+        },
+        "psr-4": {
+            "ArrayAccess\\WP\\Libraries\\Core\\": "src",
+            "ArrayAccess\\WP\\Tests\\Libraries\\Core\\": "tests"
+        }
+    }
+}

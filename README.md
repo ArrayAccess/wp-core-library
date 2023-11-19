@@ -1,6 +1,6 @@
 ## WP Core Library
 
-This is a library for WordPress plugins. It provides a set of useful functions and classes.
+This is a library for WordPress development based on Object Oriented code. It provides a set of useful functions and classes.
 
 The library is designed to be used with [Composer](https://getcomposer.org/). It is not a plugin itself, but a set of classes and functions that can be used in plugins.
 
@@ -32,6 +32,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 ## Features
 
+- Fully Object Oriented Library & Codes.
 - PSR2 Coding Standard
 - Service-based library architecture
 - Database abstraction layer using doctrine/dbal with WordPress caching implementation

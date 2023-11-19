@@ -47,7 +47,7 @@ final class Database extends AbstractService implements DatabaseInterface
             return $this->connection;
         }
         return $this->connection = Connection::createFromWPDBConnectionParams(
-            $GLOBALS['wpdb']
+            WPDBConnectionParams::create($GLOBALS['wpdb'])
         );
     }
 

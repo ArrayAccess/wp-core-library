@@ -56,7 +56,7 @@ final class Connection extends \Doctrine\DBAL\Connection
     ) : Connection {
         /** @noinspection PhpUnhandledExceptionInspection */
         return new self(
-            DriverManager::getConnection($WPDBConnectionParams->getMySQLiParams()),
+            $WPDBConnectionParams->getDriverObject(),
             $WPDBConnectionParams->getPrefix()
         );
     }

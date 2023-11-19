@@ -7,12 +7,14 @@ use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
 use Exception;
 use function array_shift;
+use function hash_hmac;
 use function max;
+use function md5;
 use function preg_match;
 use function str_contains;
 
 /**
- * Object to help create stateless cookie value with hashed value
+ * Object to help create hashed value, suitable for stateless cookie value
  *
  * This also suitable to create custom hash with id verification
  *
@@ -20,31 +22,35 @@ use function str_contains;
  * The cookie value based on hash_hmac() function with sha256 algorithm
  * User id based on: wp logged-in user id or 0 if not logged in
  *
- * Random bytes ($random) based on:
+ * Random bytes ($randomString) based on:
  * - random_bytes(16)
  * Hashed value based on:
- * - random hex is md5($random) ($randomHex) - 32 chars
- * - Using dechex(user id + hexdec(substr($randomHex, -4))) ($userId)
- * - Using md5() of User agent browser ($agent) name type (eg: chrome, firefox, safari, etc.)
+ * - random hex is md5($randomString) ($random) - 32 chars
+ * - Using dechex(user id + hexdec(substr($random, -4))) ($userId)
  * - Using dechex()  of Start time ($startTime) (unix timestamp)
  * - Cookie using session or not ($forever) (longer session time). 1 if longer session time, 0 if not
+ * - Using hash_hmac(
+ *      'md5',
+ *      $userAgent,
+ *      AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
+ * ) of User agent browser ($agentHash) name type (eg: chrome, firefox, safari, etc.)
  *
  * Secret key based on:
  *  hash_hmac(
  *      'sha256',
- *      $randomHex . '-' . $userId . '-' . $agent . '-' . $startTime . '-' . $forever,
- *      AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
+ *      $random . '-' . $userId . '-' . $agentHash . '-' . $startTime . '-' . $forever,
+ *      AUTH_KEY . SECURE_AUTH_KEY . LOGGED_IN_KEY . NONCE_KEY . $random
  * )
  *
  * And the content of cookie is:
- * $secretKey. '-' . $randomHex. '-' . $userId .'-' .$agent .'-' .$startTime .'-' .$forever
+ * $secretKey. '-' . $random. '-' . $userId .'-' .$agentHash .'-' .$startTime .'-' .$forever
  */
-class StatelessCookie extends AbstractService
+class StatelessHash extends AbstractService
 {
     /**
      * @var string The service name.
      */
-    protected string $serviceName = 'statelessCookie';
+    protected string $serviceName = 'statelessHash';
 
     /**
      * Browser type
@@ -55,11 +61,11 @@ class StatelessCookie extends AbstractService
     protected string $browserType;
 
     /**
-     * The cached cookie data
+     * The cached data
      *
      * @var array<int, array{0: string, 1: string>>
      */
-    protected array $cookieData = [];
+    protected array $cachedData = [];
 
     /**
      * @inheritdoc
@@ -67,41 +73,44 @@ class StatelessCookie extends AbstractService
     protected function onConstruct(): void
     {
         $this->description = __(
-            'Object to help create stateless cookie value with hashed value',
+            'Object to help create hashed value, suitable for stateless cookie value',
             'arrayaccess'
         );
     }
 
     /**
-     * Generate cookie value
+     * Generate hashed value
      *
-     * @param int $userId user id (0 if not logged in)
+     * @param ?int $userId user id (null if not logged in) if null uses current user id
      * @param bool $forever longer session time
      * @param bool $regenerate regenerate cookie value
      * @return string The cookie value
      */
     public function generate(
-        int $userId = 0,
+        ?int $userId = null,
         bool $forever = true,
         bool $regenerate = false
     ): string {
+        if ($userId === null) {
+            $userId = get_current_user_id();
+        }
         $userId = max(0, $userId);
         $foreverInt = $forever ? 1 : 0;
-        if (!$regenerate && $userId > 0 && isset($this->cookieData[$userId][$foreverInt])) {
-            return $this->cookieData[$userId][$foreverInt];
+        if (!$regenerate && $userId > 0 && isset($this->cachedData[$userId][$foreverInt])) {
+            return $this->cachedData[$userId][$foreverInt];
         }
         $cookieValue = $this->generateHashedValue($userId, $forever);
         if ($userId > 0) {
-            $this->cookieData[$userId][$foreverInt] = $cookieValue;
+            $this->cachedData[$userId][$foreverInt] = $cookieValue;
         }
         return $cookieValue;
     }
 
     /**
-     * Generate hashed value from cookie
+     * Generate hashed value from string (e.g.: cookie)
      *
      * @param ?int $userId user id (null if not logged in)
-     * @param bool $forever
+     * @param bool $forever longer session time
      * @return string
      */
     public function generateHashedValue(?int $userId = null, bool $forever = true) : string
@@ -114,39 +123,46 @@ class StatelessCookie extends AbstractService
 
         // generate hashed cookie
         try {
-            $random = random_bytes(16);
+            $randomString = random_bytes(16);
         } catch (Exception) {
             // if random bytes thrown an error, generate 16 chars from random string
-            $random = '';
+            $randomString = '';
             for ($i = 0; $i < 16; $i++) {
-                $random .= chr(mt_rand(0, 255));
+                $randomString .= chr(mt_rand(0, 255));
             }
         }
-        // agent hex is md5($agent)
-        $agentHex = md5($this->getBrowserType());
+
         // random hex is md5($random)
-        $randomHex = md5($random);
+        $random = md5($randomString);
+        $userAgent = $this->getBrowserType();
+        // agent hash is
+        // hash_hmac('md5', $userAgent, AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random)
+        $agentHash = hash_hmac(
+            'md5',
+            $userAgent,
+            AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
+        );
         // start time in hex
         $startTimeHex = dechex(time());
         // user id + hexdec(substr($randomHex, -4))
-        $userIdCalcHex = dechex($userId + hexdec(substr($randomHex, -4)));
+        $userIdCalcHex = dechex($userId + hexdec(substr($random, -4)));
         // if forever, set forever to 1, else 0
         $forever = $forever ? 1 : 0;
         // generate secret key
         $secretKey = hash_hmac(
             'sha256',
-            $randomHex . '-' . $userIdCalcHex . '-' . $agentHex . '-' . $startTimeHex . '-' . $forever,
-            AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
+            $random . '-' . $userIdCalcHex . '-' . $agentHash . '-' . $startTimeHex . '-' . $forever,
+            AUTH_KEY . SECURE_AUTH_KEY . LOGGED_IN_KEY . NONCE_KEY . $random
         );
 
         // return cookie value
         return $secretKey
             . '-'
-            . $randomHex
+            . $random
             . '-'
             . $userIdCalcHex
             . '-'
-            . $agentHex
+            . $agentHash
             . '-'
             . $startTimeHex
             . '-'
@@ -156,13 +172,13 @@ class StatelessCookie extends AbstractService
     /**
      * Check if cookie value is valid
      *
-     * @param string $cookieValue
+     * @param string $hashedValue
      * @param string|null $userAgent
      * @return bool
      */
-    public function isValid(string $cookieValue, ?string $userAgent = null): bool
+    public function isValid(string $hashedValue, ?string $userAgent = null): bool
     {
-        return $this->parseCookieHashedValue($cookieValue, $userAgent) !== null;
+        return $this->parse($hashedValue, $userAgent) !== null;
     }
 
     /**
@@ -171,27 +187,28 @@ class StatelessCookie extends AbstractService
      * - if invalid validation from secret key & random hex return null
      * - user id (integer) based on $userIdCalcHex - hexdec(substr($randomHex, -4))
      *
-     * @param string $cookieValue
+     * @param string $hashedValue
      * @param string|null $userAgent if null, will use $_SERVER['HTTP_USER_AGENT']
      * @return ?array{
      *     secretKey: string,
-     *     randomHex: string,
-     *     userId: int,
-     *     user: ?\WP_User,
-     *     agentHex: string,
+     *     random: string,
+     *     agentHash: string,
      *     startTime: int,
-     *     forever: bool
+     *     forever: bool,
+     *     userId: int,
+     *     userAgent: string,
+     *     user: ?\WP_User
      * }
      * @noinspection PhpFullyQualifiedNameUsageInspection
      */
-    public function parseCookieHashedValue(
-        string $cookieValue,
+    public function parse(
+        string $hashedValue,
         ?string $userAgent = null
     ) : ?array {
         // parse cookie value
         preg_match(
             '~^([a-f0-9]{64})-([a-f0-9]{32})-([a-f0-9]{1,8})-([a-f0-9]{32})-([a-f0-9]{1,8})-([01])$~i',
-            $cookieValue,
+            $hashedValue,
             $matches
         );
         // if not match, it's invalid
@@ -202,32 +219,45 @@ class StatelessCookie extends AbstractService
         // list of matches
         [
             $secretKey,
-            $randomHex,
+            $random,
             $userIdCalcHex,
-            $agentHex,
+            $agentHash,
             $startTimeHex,
             $forever
         ] = $matches;
         // get user id from hexdec($userIdCalcHex) - hexdec(substr($randomHex, -4))
-        $userId = hexdec($userIdCalcHex) - hexdec(substr($randomHex, -4));
+        $userId = hexdec($userIdCalcHex) - hexdec(substr($random, -4));
         // user id below zero is invalid
         if ($userId < 0) {
             return null;
         }
+        $time = time();
         $startTime = hexdec($startTimeHex);
-        // if start time is more than 1 hour, it's invalid
-        if ($startTime < time() - 3600) {
+        // if start time is more than current time, it's invalid
+        if ($startTime > $time) {
             return null;
         }
-        $agent = md5($this->getBrowserTypeFromUserAgent($userAgent));
+        $sevenDaysSecond = 7 * 24 * 60 * 60;
+        $isForever = $forever === '1';
+        // expired if not forever and start time + 7 days is less than current time
+        if (!$isForever && ($startTime + $sevenDaysSecond) < $time) {
+            return null;
+        }
+        $userAgent = $this->getBrowserTypeFromUserAgent($userAgent);
+        $agent = hash_hmac(
+            'md5',
+            $userAgent,
+            AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
+        );
         // if agent is not same, it's invalid
-        if ($agent !== $agentHex) {
+        if ($agent !== $agentHash) {
             return null;
         }
+        // generate secret key
         $secretKeyCheck = hash_hmac(
             'sha256',
-            $randomHex . '-' . $userIdCalcHex . '-' . $agentHex . '-' . $startTimeHex . '-' . $forever,
-            AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $randomHex
+            $random . '-' . $userIdCalcHex . '-' . $agentHash . '-' . $startTimeHex . '-' . $forever,
+            AUTH_KEY . SECURE_AUTH_KEY . LOGGED_IN_KEY . NONCE_KEY . $random
         );
         // if secret key is not identical, it's invalid
         if ($secretKey !== $secretKeyCheck) {
@@ -245,14 +275,16 @@ class StatelessCookie extends AbstractService
                 return null;
             }
         }
+        // return parsed data
         return [
             'secretKey' => $secretKey,
-            'randomHex' => $randomHex,
-            'userId' => $userId,
-            'user' => $user,
-            'agentHex' => $agentHex,
+            'random' => $random,
+            'agentHash' => $agentHash,
             'startTime' => $startTime,
-            'forever' => $forever === '1',
+            'forever' => $isForever,
+            'userId' => $userId,
+            'userAgent' => $userAgent,
+            'user' => $user,
         ];
     }
 

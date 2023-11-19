@@ -9,7 +9,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
-use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessCookie;
+use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
 use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
 use ReflectionClass;
 use Throwable;
@@ -60,7 +60,7 @@ final class Services implements ServicesInterface
         Database::class,
         Hooks::class,
         Option::class,
-        StatelessCookie::class,
+        StatelessHash::class,
         AdminMenu::class
     ];
 

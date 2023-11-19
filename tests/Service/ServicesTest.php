@@ -67,8 +67,8 @@ class ServicesTest extends TestCase
             $this->services->get(Services\Database::class)
         );
         $this->assertInstanceOf(
-            Services\StatelessCookie::class,
-            $this->services->get(Services\StatelessCookie::class)
+            Services\StatelessHash::class,
+            $this->services->get(Services\StatelessHash::class)
         );
         $this->assertInstanceOf(
             Services\Hooks::class,
@@ -106,7 +106,7 @@ class ServicesTest extends TestCase
             $this->services->getServices()
         );
         $this->assertArrayHasKey(
-            strtolower(Services\StatelessCookie::class),
+            strtolower(Services\StatelessHash::class),
             $this->services->getServices()
         );
         $this->assertArrayHasKey(

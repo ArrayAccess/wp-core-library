@@ -6,12 +6,20 @@ namespace ArrayAccess\WP\Libraries\Core\Database\Driver;
 use Doctrine\DBAL\Driver\AbstractMySQLDriver;
 use Doctrine\DBAL\Driver\Mysqli\Connection;
 use mysqli;
-use wpdb;
 
+/**
+ * Driver Mysqli connection for doctrine
+ */
 class MySQLiDriver extends AbstractMySQLDriver
 {
+    /**
+     * @var mysqli $mysqli
+     */
     protected mysqli $mysqli;
 
+    /**
+     * @param mysqli $mysqli
+     */
     public function __construct(mysqli $mysqli)
     {
         $this->mysqli = $mysqli;

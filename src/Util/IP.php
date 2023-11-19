@@ -25,6 +25,9 @@ use function substr_count;
 use function substr_replace;
 use function trim;
 
+/**
+ * IP utility class
+ */
 class IP
 {
     public const IP4 = 4;

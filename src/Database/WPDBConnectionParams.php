@@ -19,6 +19,9 @@ use const DB_NAME;
 use const DB_PASSWORD;
 use const DB_USER;
 
+/**
+ * WPDB object connection params
+ */
 final class WPDBConnectionParams
 {
     private function __construct(
@@ -93,8 +96,14 @@ final class WPDBConnectionParams
         ];
     }
 
+    /**
+     * @var Driver $driverObject Driver object
+     */
     private Driver $driverObject;
 
+    /**
+     * @return Driver Driver object
+     */
     public function getDriverObject() : Driver
     {
         if (isset($this->driverObject)) {
@@ -108,6 +117,12 @@ final class WPDBConnectionParams
         return $this->driverObject = new MySQLiDriver($this->dbh);
     }
 
+    /**
+     * Create from wpdb connection params
+     *
+     * @param wpdb|null $wpDB
+     * @return WPDBConnectionParams
+     */
     public static function create(?wpdb $wpDB = null): WPDBConnectionParams
     {
         if ($wpDB === null) {
@@ -138,6 +153,9 @@ final class WPDBConnectionParams
         $driver = 'mysqli';
         $init = '';
         if ($isMysqli) {
+            /**
+             * @see wpdb
+             */
             if (!empty($wpDB->charset)) {
                 $init .= sprintf("SET NAMES '%s'", $wpDB->charset);
                 if ($wpDB->has_cap('collation') && !empty($wpDB->collate)) {
@@ -149,6 +167,10 @@ final class WPDBConnectionParams
                 $init .= sprintf("; SET SESSION sql_mode='%s'", $sqlMode);
             }
         } /** @noinspection PhpUndefinedClassInspection */ elseif ($dbh instanceof \WP_SQLite_Translator) {
+            /**
+             * Take from SQLite Database Integration Plugin
+             * @link https://wordpress.org/plugins/sqlite-database-integration/
+             */
             // for wp sqlite
             $driver = 'pdo_sqlite';
             $host = defined('FQDB') ? \FQDB : null;
@@ -180,55 +202,89 @@ final class WPDBConnectionParams
         );
     }
 
+    /**
+     * Database instance from wpdb
+     */
     public function getDbh()
     {
         return $this->dbh;
     }
+
+    /**
+     * @return string Database charset
+     */
     public function getCharset(): string
     {
         return $this->charset;
     }
 
+    /**
+     * @return string Database collation
+     */
     public function getCollation(): string
     {
         return $this->collation;
     }
 
+    /**
+     * @return string Database host or path
+     */
     public function getHost(): string
     {
         return $this->host;
     }
 
+    /**
+     * @return string Database username
+     */
     public function getUsername(): string
     {
         return $this->username;
     }
 
+    /**
+     * @return string Database password
+     */
     public function getPassword(): string
     {
         return $this->password;
     }
 
+    /**
+     * @return string Database name
+     */
     public function getDatabase(): string
     {
         return $this->database;
     }
 
+    /**
+     * @return ?int Database port
+     */
     public function getPort(): ?int
     {
         return $this->port;
     }
 
+    /**
+     * @return string table prefix
+     */
     public function getPrefix(): string
     {
         return $this->prefix;
     }
 
+    /**
+     * @return string init command
+     */
     public function getInitCommand(): string
     {
         return $this->initCommand;
     }
 
+    /**
+     * @return ?string The mysql unix socket
+     */
     public function getSocket(): ?string
     {
         return $this->socket;

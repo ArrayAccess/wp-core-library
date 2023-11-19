@@ -9,8 +9,14 @@ use PDO;
 use function sprintf;
 use function str_starts_with;
 
+/**
+ * Driver PDO connection for doctrine
+ */
 class PDOMySQLDriver extends AbstractMySQLDriver
 {
+    /**
+     * @param PDO $pdo
+     */
     public function __construct(private PDO $pdo)
     {
         $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -24,6 +30,9 @@ class PDOMySQLDriver extends AbstractMySQLDriver
         }
     }
 
+    /** 
+     * @inheritdoc 
+     */
     public function connect(array $params): Connection
     {
         return new Connection($this->pdo);

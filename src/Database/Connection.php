@@ -8,13 +8,21 @@ use Doctrine\Common\Cache\Psr6\CacheAdapter;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\DriverManager;
 
+/**
+ * Doctrine Connection implementation support for WordPress
+ */
 final class Connection extends \Doctrine\DBAL\Connection
 {
+    /**
+     * @var string $prefix table prefix
+     */
     protected string $prefix;
 
     /**
-     * @param Driver $driver
-     * @param string $prefix
+     * Connection constructor.
+     *
+     * @param Driver $driver doctrine driver
+     * @param string $prefix table prefix
      * @noinspection PhpDocMissingThrowsInspection
      */
     public function __construct(Driver $driver, string $prefix = '')
@@ -26,6 +34,11 @@ final class Connection extends \Doctrine\DBAL\Connection
         $this->getConfiguration()->setResultCache(CacheAdapter::wrap(new WPCache()));
     }
 
+    /**
+     * Table prefix
+     *
+     * @return string
+     */
     public function getPrefix(): string
     {
         return $this->prefix;

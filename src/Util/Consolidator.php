@@ -52,6 +52,9 @@ use const PHP_SAPI;
 
 class Consolidator
 {
+    /**
+     * Blacklisted class name
+     */
     public const BLACKLISTED_NAME = [
         'array',
         'iterable',

@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Traits;
 
-use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\MenuPageInterface;
+use function function_exists;
+use function is_network_admin;
+use function is_user_admin;
 
 trait AdminMenuTrait
 {
@@ -37,6 +39,8 @@ trait AdminMenuTrait
      */
     protected string $iconUrl;
 
+    protected bool $renderInNetworkAdmin = true;
+
     /**
      * Constructor to use on an admin menu
      *
@@ -61,6 +65,22 @@ trait AdminMenuTrait
         $this->capability = $capability;
         $this->iconUrl = $iconUrl;
         $this->position = $position;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function renderInNetworkAdmin(bool $renderInNetworkAdmin = true): void
+    {
+        $this->renderInNetworkAdmin = $renderInNetworkAdmin;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isRenderInNetworkAdmin(): bool
+    {
+        return $this->renderInNetworkAdmin;
     }
 
     /**
@@ -153,8 +173,33 @@ trait AdminMenuTrait
         return $this->iconUrl;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function isAllowed(): bool
     {
         return current_user_can($this->getCapability());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isNetworkAdmin() : bool
+    {
+        return function_exists('is_network_admin') && is_network_admin();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getHookAction(): string
+    {
+        // see menu.php
+        return $this->isNetworkAdmin()
+            ? 'network_admin_menu'
+            : (is_user_admin()
+                ? 'user_admin_menu'
+                : 'admin_menu'
+            );
     }
 }

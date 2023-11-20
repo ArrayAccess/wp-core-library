@@ -8,6 +8,20 @@ use function add_submenu_page;
 interface SubMenuPagePageInterface extends MenuPageInterface
 {
     /**
+     * Get the default parent menu slug.
+     *
+     * @return string
+     */
+    public function getDefaultParentMenuSlug(): string;
+
+    /**
+     * Set the default parent menu slug to use if the root menu page is not registered.
+     *
+     * @param string $defaultParentMenuSlug
+     */
+    public function setDefaultParentMenuSlug(string $defaultParentMenuSlug);
+
+    /**
      * Set the renderer.
      *
      * @param MenuPageRendererInterface $renderer
@@ -24,10 +38,9 @@ interface SubMenuPagePageInterface extends MenuPageInterface
     /**
      * Register the menu page.
      *
-     * @param string $parentSlug the slug of the parent menu page
-     * @param RootMenuPageInterface|null $root if null, use the root menu page
+     * @param ?RootMenuPageInterface $root
      * @return ?string null if not registered
      * @uses add_submenu_page()
      */
-    public function register(string $parentSlug, ?RootMenuPageInterface $root = null) : ?string;
+    public function register(?RootMenuPageInterface $root = null) : ?string;
 }

@@ -57,4 +57,9 @@ interface ServicesInterface
      * @return array<class-string<ServiceInterface>, ServiceInterface>
      */
     public function getServices() : array;
+
+    /**
+     * Load wp admin plugin file
+     */
+    public static function loadPluginFile();
 }

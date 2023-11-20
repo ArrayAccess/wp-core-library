@@ -63,14 +63,6 @@ interface RootMenuPageInterface extends MenuPageInterface, Countable
     public function getSubMenuPages() : array;
 
     /**
-     * Register to admin menu.
-     *
-     * @return string the hook name
-     * @uses add_menu_page()
-     */
-    public function register() : ?string;
-
-    /**
      * Check if the menu page is registered.
      *
      * @return bool

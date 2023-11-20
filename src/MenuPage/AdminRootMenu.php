@@ -29,6 +29,8 @@ class AdminRootMenu
     }
 
     /**
+     * Set the hook.
+     *
      * @param HookInterface|null $hook
      */
     public function setHook(?HookInterface $hook): void
@@ -56,6 +58,10 @@ class AdminRootMenu
         return $this->menu;
     }
 
+    /**
+     * Get the slug.
+     * @return string
+     */
     public function getSlug(): string
     {
         return $this->menu->getSlug();
@@ -83,6 +89,12 @@ class AdminRootMenu
         return $this->menu->removeSubMenuPage($slug);
     }
 
+    /**
+     * Get a submenu page.
+     *
+     * @param string $slug
+     * @return Interfaces\SubMenuPagePageInterface|null
+     */
     public function getSubmenu(string $slug): ?Interfaces\SubMenuPagePageInterface
     {
         return $this->menu->getSubMenuPage($slug);
@@ -98,6 +110,7 @@ class AdminRootMenu
         if ($this->isRegistered) {
             return;
         }
+
         $this->isRegistered = true;
         $hook = $this->getHook();
         $hook?->apply('menu.before.register', $this);

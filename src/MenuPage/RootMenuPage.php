@@ -8,6 +8,16 @@ use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\SubMenuPagePageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\MenuPageRendererInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\RootMenuPageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Traits\AdminMenuTrait;
+use ArrayAccess\WP\Libraries\Core\Service\Services;
+use function add_action;
+use function add_menu_page;
+use function did_action;
+use function doing_action;
+use function function_exists;
+use function get_plugin_page_hookname;
+use function has_action;
+use function remove_action;
+use function var_dump;
 
 /**
  * Admin menu placed into the root of the admin menu.
@@ -30,9 +40,9 @@ class RootMenuPage implements RootMenuPageInterface
     protected bool $isRegistered = false;
 
     /**
-     * @var string|false|null the hook name if registered
+     * @var string the hook name if registered
      */
-    protected string|null|false $hookName = null;
+    private string|null|false $hookName = null;
 
     /**
      * @inheritdoc
@@ -132,24 +142,16 @@ class RootMenuPage implements RootMenuPageInterface
     }
 
     /**
-     * @inheritdoc
+     * Register the menu.
      */
     public function register(): ?string
     {
         if ($this->isRegistered) {
             return $this->getHookName();
         }
-        // don't register if there are no sub menu pages
-        if (count($this->subMenuPages) === 0) {
-            return null;
-        }
+
         $this->isRegistered = true;
-        if ($this->registerMenu()) {
-            foreach ($this->getSubMenuPages() as $menuPage) {
-                $menuPage->register($this->getSlug(), $this);
-            }
-        }
-        return $this->getHookName();
+        return $this->registerMenu();
     }
 
     /**
@@ -169,15 +171,61 @@ class RootMenuPage implements RootMenuPageInterface
      */
     protected function registerMenu(): ?string
     {
-        return ($this->hookName ??= add_menu_page(
-            $this->getPageTitle(),
-            $this->getMenuTitle(),
-            $this->getCapability(),
-            $this->getSlug(),
-            '',
-            $this->getIconUrl(),
-            $this->getPosition()
-        ))?:null;
+        if ($this->hookName !== null) {
+            return $this->hookName?:null;
+        }
+
+        if (!function_exists('get_plugin_page_hookname')) {
+            // doing load plugin file
+            Services::loadPluginFile();
+        }
+
+        $actionMenu = $this->getHookAction();
+        $callbackAddMenuPage = function () use ($actionMenu, &$callbackAddMenuPage) {
+            if (has_action($actionMenu, $callbackAddMenuPage)) {
+                remove_action($actionMenu, $callbackAddMenuPage);
+            }
+            // don't register if there are no sub menu pages
+            if (count($this->subMenuPages) === 0) {
+                return $this->hookName = false;
+            }
+            // don't register if on network admin and not rendering in network admin
+            if ($this->isNetworkAdmin() && !$this->isRenderInNetworkAdmin()) {
+                return $this->hookName = false;
+            }
+            $this->hookName = add_menu_page(
+                $this->getPageTitle(),
+                $this->getMenuTitle(),
+                $this->getCapability(),
+                $this->getSlug(),
+                '',
+                $this->getIconUrl(),
+                $this->getPosition()
+            )?:false;
+            // if successfully registered, then register submenu pages
+            if ($this->hookName) {
+                // register sub menu pages
+                foreach ($this->getSubMenuPages() as $menuPage) {
+                    $menuPage->register($this);
+                }
+            }
+            return $this->hookName;
+        };
+        if (!doing_action($actionMenu)
+            || did_action($actionMenu)
+        ) {
+            $this->hookName = $callbackAddMenuPage()?:false;
+        } else {
+            /**
+             * Create hook name based on get_plugin_page_hookname
+             * @uses get_plugin_page_hookname()
+             * @see add_menu_page()
+             */
+            $this->hookName = get_plugin_page_hookname($this->getSlug(), '');
+            add_action($actionMenu, $callbackAddMenuPage);
+        }
+
+        return $this->hookName?:null;
     }
 
     /**

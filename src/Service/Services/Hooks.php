@@ -22,6 +22,9 @@ use function in_array;
  */
 class Hooks extends AbstractService implements HookInterface
 {
+    /**
+     * @var string the service name
+     */
     protected string $serviceName = 'hooks';
 
     /**
@@ -55,14 +58,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Add a hook
-     *
-     * @param string $name
-     * @param callable $callback
-     * @param int $priority
-     * @param int $acceptedArgs
-     *
-     * @return void
+     * @inheritdoc
      */
     public function add(
         string $name,
@@ -75,9 +71,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Check if the hook is empty
-     *
-     * @return bool
+     * @inheritdoc
      */
     public function empty(): bool
     {
@@ -88,13 +82,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Check if the hook exists
-     *
-     * @param string $name
-     * @param callable|null $callback
-     * @param int|null $priority
-     *
-     * @return bool
+     * @inheritdoc
      */
     public function has(string $name, ?callable $callback = null, ?int $priority = null) : bool
     {
@@ -117,13 +105,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Remove a hook
-     *
-     * @param string $name
-     * @param callable|null $callback
-     * @param int|null $priority
-     *
-     * @return bool
+     * @inheritdoc
      */
     public function remove(string $name, ?callable $callback = null, ?int $priority = null): bool
     {
@@ -151,10 +133,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Check the hook already did
-     *
-     * @param string $name
-     * @return int
+     * @inheritdoc
      */
     public function did(string $name): int
     {
@@ -162,10 +141,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Check if the hook is doing
-     *
-     * @param string|null $name
-     * @return bool
+     * @inheritdoc
      */
     public function doing(?string $name = null): bool
     {
@@ -177,9 +153,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Get the current hook name
-     *
-     * @return ?string
+     * @inheritdoc
      */
     public function current() : ?string
     {
@@ -188,13 +162,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Apply the hook
-     *
-     * @param string $name
-     * @param mixed $value
-     * @param mixed ...$args
-     *
-     * @return mixed
+     * @inheritdoc
      */
     public function apply(string $name, mixed $value = null, mixed ...$args): mixed
     {
@@ -212,9 +180,7 @@ class Hooks extends AbstractService implements HookInterface
     }
 
     /**
-     * Get lists of hook names
-     *
-     * @return array<string, WP_Hook>
+     * @inheritdoc
      */
     public function getHookNames() : array
     {

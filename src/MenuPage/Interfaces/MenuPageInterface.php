@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces;
 
+use function add_submenu_page;
+
 /**
  * Create admin menu interface with user by slug, capability & position
  * This admin menu to add admin menu page in WordPress dashboard
@@ -117,6 +119,18 @@ interface MenuPageInterface
     );
 
     /**
+     * Render if in network site
+     *
+     * @param bool $renderInNetworkAdmin
+     */
+    public function renderInNetworkAdmin(bool $renderInNetworkAdmin = true);
+
+    /**
+     * @return bool true if render in network admin
+     */
+    public function isRenderInNetworkAdmin(): bool;
+
+    /**
      * Get Menu Slug
      *
      * @return string
@@ -197,4 +211,18 @@ interface MenuPageInterface
      * @return bool
      */
     public function isAllowed(): bool;
+
+    /**
+     * Check if in network admin
+     *
+     * @return bool
+     */
+    public function isNetworkAdmin() : bool;
+
+    /**
+     * Get hook action of admin-menu
+     *
+     * @return string admin_menu|network_admin_menu|user_admin_menu
+     */
+    public function getHookAction(): string;
 }

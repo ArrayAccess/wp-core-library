@@ -52,6 +52,11 @@ final class Services implements ServicesInterface
     private static array $classMap = [];
 
     /**
+     * @var bool true if plugin file is loaded
+     */
+    private static bool $pluginFileLoaded = false;
+
+    /**
      * Default services list.
      *
      * @var array<class-string<ObjectService>>
@@ -262,5 +267,16 @@ final class Services implements ServicesInterface
             $this->get($item);
         }
         return $this->services;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    final public static function loadPluginFile(): void
+    {
+        if (self::$pluginFileLoaded) {
+            return;
+        }
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
 }

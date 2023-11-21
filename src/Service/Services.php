@@ -10,7 +10,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
 use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
-use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
+use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ReflectionClass;
 use Throwable;
 use function in_array;
@@ -97,7 +97,7 @@ final class Services implements ServicesInterface
             return $service::class;
         }
         $service = ltrim($service, '\\');
-        if (!Consolidator::isValidClassName($service)) {
+        if (!Filter::className($service)) {
             return null;
         }
         $serviceId = strtolower($service);

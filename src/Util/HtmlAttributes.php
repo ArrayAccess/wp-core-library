@@ -26,6 +26,9 @@ use const ENT_QUOTES;
 use const ENT_SUBSTITUTE;
 use const JSON_UNESCAPED_SLASHES;
 
+/**
+ * Class handles html attributes and html tags
+ */
 class HtmlAttributes
 {
     /**
@@ -347,11 +350,7 @@ class HtmlAttributes
             if (isset(self::ATTRIBUTES_NUMERIC_TYPES[$lowerKey])) {
                 $value = is_numeric($value) ? $value : '';
             } elseif (isset(self::ATTRIBUTES_INTEGER_TYPES[$lowerKey])) {
-                if (is_numeric($value)) {
-                    $value = (string) intval($value);
-                } else {
-                    $value = '';
-                }
+                $value = is_numeric($value) ? (string) intval($value) : '';
             }
 
             $key = self::HTML_ATTRIBUTES[$lowerKey]??$key;

@@ -5,7 +5,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
-use Exception;
+use ArrayAccess\WP\Libraries\Core\Util\Header;
 use function array_shift;
 use function hash_hmac;
 use function max;
@@ -28,12 +28,13 @@ use function str_contains;
  * - random hex is md5($randomString) ($random) - 32 chars
  * - Using dechex(user id + hexdec(substr($random, -4))) ($userId)
  * - Using dechex()  of Start time ($startTime) (unix timestamp)
- * - Cookie using session or not ($forever) (longer session time). 1 if longer session time, 0 if not
+ * - Cookie using session or not ($forever) (longer session time).
+ * (1) if longer session time, (0) if not
  * - Using hash_hmac(
  *      'md5',
  *      $userAgent,
  *      AUTH_SALT . SECURE_AUTH_SALT . LOGGED_IN_SALT . NONCE_SALT . $random
- * ) of User agent browser ($agentHash) name type (eg: chrome, firefox, safari, etc.)
+ * ) of User agent browser ($agentHash) name type (e.g.: chrome, firefox, safari, etc.)
  *
  * Secret key based on:
  *  hash_hmac(
@@ -121,17 +122,8 @@ class StatelessHash extends AbstractService
         // minimum user id is 0
         $userId = max(0, $userId);
 
-        // generate hashed cookie
-        try {
-            $randomString = random_bytes(16);
-        } catch (Exception) {
-            // if random bytes thrown an error, generate 16 chars from random string
-            $randomString = '';
-            for ($i = 0; $i < 16; $i++) {
-                $randomString .= chr(mt_rand(0, 255));
-            }
-        }
-
+        // generate random string
+        $randomString = Consolidator::randomBytes(16);
         // random hex is md5($random)
         $random = md5($randomString);
         $userAgent = $this->getBrowserType();
@@ -296,7 +288,7 @@ class StatelessHash extends AbstractService
      */
     public function getBrowserTypeFromUserAgent(?string $userAgent = null): string
     {
-        $userAgent = $userAgent?:($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $userAgent = $userAgent?:Header::line('User-Agent');
         if (str_contains($userAgent, 'MSIE') || str_contains($userAgent, 'Trident/')) {
             return 'ie';
         }

@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces;
 
-use function add_submenu_page;
-
 /**
  * Create admin menu interface with user by slug, capability & position
  * This admin menu to add admin menu page in WordPress dashboard

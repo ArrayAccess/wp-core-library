@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage;
 
+use ArrayAccess\WP\Libraries\Core\Exceptions\InvalidArgumentException;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Exceptions\MenuRegisteredException;
-use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\SubMenuPagePageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\MenuPageRendererInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\RootMenuPageInterface;
+use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\SubMenuPagePageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Traits\AdminMenuTrait;
 use ArrayAccess\WP\Libraries\Core\Service\Services;
+use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use function add_action;
 use function add_menu_page;
 use function did_action;
@@ -16,8 +18,8 @@ use function doing_action;
 use function function_exists;
 use function get_plugin_page_hookname;
 use function has_action;
+use function is_array;
 use function remove_action;
-use function var_dump;
 
 /**
  * Admin menu placed into the root of the admin menu.
@@ -40,7 +42,7 @@ class RootMenuPage implements RootMenuPageInterface
     protected bool $isRegistered = false;
 
     /**
-     * @var string the hook name if registered
+     * @var string|null|false the hook name if registered
      */
     private string|null|false $hookName = null;
 
@@ -234,5 +236,77 @@ class RootMenuPage implements RootMenuPageInterface
     public function isRegistered(): bool
     {
         return $this->isRegistered;
+    }
+
+    /**
+     * @param array{
+     *     page_title: string,
+     *     menu_title: string,
+     *     capability: string,
+     *     menu_slug: string,
+     *     icon_url: string,
+     *     position: int,
+     *     render_in_network_admin: bool,
+     *     submenu: SubMenuPagePageInterface[]|array<array{
+     *          page_title: string,
+     *          menu_title: string,
+     *          capability: string,
+     *          menu_slug: string,
+     *          icon_url: string,
+     *          position: int,
+     *          render_in_network_admin: bool,
+     *          renderer: ?MenuPageRendererInterface|callable|string
+     *     }>
+     * } $data
+     * @return RootMenuPageInterface
+     * @see SubMenuPage::fromArray()
+     */
+    public static function fromArray(array $data): RootMenuPageInterface
+    {
+        if (!Filter::shouldStrings(
+            $data['page_title']??null,
+            $data['menu_title']??null,
+            $data['capability']??null,
+            $data['menu_slug']??null
+        )
+        ) {
+            throw new InvalidArgumentException(
+                __(
+                    'Invalid data for root menu page.',
+                    'arrayaccess'
+                )
+            );
+        }
+
+        $data['icon_url'] = Filter::shouldString($data['icon_url']??'');
+        $data['position'] = Filter::shouldInteger($data['position']??null);
+        $menu = new static(
+            $data['page_title'],
+            $data['menu_title'],
+            $data['capability'],
+            $data['menu_slug'],
+            $data['icon_url'],
+            $data['position']
+        );
+        // default to true
+        $menu->renderInNetworkAdmin((bool)($data['render_in_network_admin']??true));
+        if (is_array($data['submenu']??null)) {
+            foreach ($data['submenu'] as $submenu) {
+                if (is_array($submenu)
+                    && Filter::shouldStrings(
+                        $submenu['page_title']??null,
+                        $submenu['menu_title']??null,
+                        $submenu['capability']??null,
+                        $submenu['menu_slug']??null
+                    )
+                ) {
+                    $submenu = SubMenuPage::fromArray($submenu);
+                }
+                if (Filter::shouldInstanceOf($submenu, SubMenuPagePageInterface::class)) {
+                    $menu->addSubMenu($submenu);
+                }
+            }
+        }
+        return $menu;
     }
 }

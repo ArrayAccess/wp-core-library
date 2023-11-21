@@ -9,6 +9,9 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Unit test to test Database class
+ */
 class DatabaseTest extends TestCase
 {
     protected Services $services;
@@ -23,7 +26,8 @@ class DatabaseTest extends TestCase
         $database = $this->services->get(Database::class);
         $this->assertInstanceOf(
             Connection::class,
-            $database->getConnection()
+            $database->getConnection(),
+            'getConnection() should return Doctrine\DBAL\Connection instance'
         );
     }
 
@@ -35,7 +39,8 @@ class DatabaseTest extends TestCase
         $database = $this->services->get(Database::class);
         $this->assertSame(
             1,
-            $database->query('SELECT 1')->rowCount()
+            $database->query('SELECT 1')->rowCount(),
+            'query() should return Doctrine\DBAL\Driver\ResultStatement instance'
         );
         $this->expectException(Exception::class);
         $database->query('SELECT NOT EXISTS');
@@ -49,7 +54,8 @@ class DatabaseTest extends TestCase
         $database = $this->services->get(Database::class);
         $this->assertSame(
             1,
-            $database->prepare('SELECT 1')->executeQuery()->rowCount()
+            $database->prepare('SELECT 1')->executeQuery()->rowCount(),
+            'prepare() should return Doctrine\DBAL\Driver\Statement instance'
         );
         $this->expectException(Exception::class);
         $database->prepare('SELECT NOT EXISTS');

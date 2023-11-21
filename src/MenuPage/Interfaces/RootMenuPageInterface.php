@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces;
 
 use Countable;
-use function add_menu_page;
 
 /**
  * @see MenuPageInterface

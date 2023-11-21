@@ -7,6 +7,7 @@ use function bin2hex;
 use function bindec;
 use function dechex;
 use function explode;
+use function hex2bin;
 use function hexdec;
 use function inet_ntop;
 use function inet_pton;
@@ -30,10 +31,19 @@ use function trim;
  */
 class IP
 {
+    /**
+     * @var int IP version 4
+     */
     public const IP4 = 4;
 
+    /**
+     * @var int IP version 6
+     */
     public const IP6 = 6;
 
+    /**
+     * @var string Regex for matching local IPv4 addresses
+     */
     public const IPV4_LOCAL_REGEX = '~^
         (?:
             (?:0?[01]?0|127|255)\.(?:[01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])
@@ -43,6 +53,12 @@ class IP
         (?:\.(?:[01]?[0-9]{1,2}|2[0-4][0-9]|25[0-5])){2}
     $~x';
 
+    /**
+     * Filters an IPv4 address
+     *
+     * @param string $ip
+     * @return string|null
+     */
     public static function filterIpv4(string $ip): ?string
     {
         if (preg_match('/^([01]{8}\.){3}[01]{8}\z/i', $ip)) {
@@ -66,7 +82,6 @@ class IP
         if (($ip2long = ip2long($ip)) === false) {
             return null;
         }
-
         return $ip === long2ip($ip2long) ? $ip : null;
     }
 
@@ -78,9 +93,15 @@ class IP
      */
     public static function isValidIpv4(string $ip): bool
     {
-        return self::filterIpv4($ip) !== false;
+        return self::filterIpv4($ip) !== null;
     }
 
+    /**
+     * Validates an IPv4 address if it is a local address
+     *
+     * @param string $ip
+     * @return bool
+     */
     public static function isLocalIP4(string $ip): bool
     {
         $ip = self::filterIpv4($ip);
@@ -191,7 +212,6 @@ class IP
         ) {
             return null;
         }
-
         $firstAddrBin = inet_pton($ip);
         // fail return null
         if ($firstAddrBin === false
@@ -200,6 +220,7 @@ class IP
             return null;
         }
         $flexBits = 128 - ((int) $range);
+
         // Build the hexadecimal string of the last address
         $lastAddrHex = bin2hex($firstAddrBin);
         // start at the end of the string (which is always 32 characters long)
@@ -219,12 +240,13 @@ class IP
             $flexBits -= 4;
             $pos -= 1;
         }
-        $lastAddrBin = inet_pton($lastAddrHex);
-        if (!$lastAddrBin) {
+
+        $lastAddrBin = hex2bin($lastAddrHex);
+        $lastAddr = inet_ntop($lastAddrBin);
+        if (!$lastAddr) {
             return null;
         }
-        $lastAddr = inet_ntop($lastAddrBin);
-        return !$lastAddr ? null : [$firstAddr, $lastAddr];
+        return [$firstAddr, $lastAddr];
     }
 
     /**

@@ -61,6 +61,13 @@
             <property name="ignoreUnusedValuesWhenOnlyKeysAreUsedInForeach" value="true"/>
         </properties>
     </rule>
+    <!-- detected control structure require null coalesce -->
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireNullCoalesceOperator"/>
+    <!-- detected control structure requires ternary operator -->
+    <rule ref="SlevomatCodingStandard.ControlStructures.RequireTernaryOperator"/>
+    <!-- detected unused use -->
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses"/>
+
     <!-- we use strict! disallow equal operator, use identical for better code -->
     <rule ref="SlevomatCodingStandard.Operators.DisallowEqualOperators"/>
 </ruleset>

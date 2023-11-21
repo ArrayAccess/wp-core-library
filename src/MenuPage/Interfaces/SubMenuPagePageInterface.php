@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces;
 
-use function add_submenu_page;
-
 interface SubMenuPagePageInterface extends MenuPageInterface
 {
     /**
@@ -40,7 +38,7 @@ interface SubMenuPagePageInterface extends MenuPageInterface
      *
      * @param ?RootMenuPageInterface $root
      * @return ?string null if not registered
-     * @uses add_submenu_page()
+     * @uses \add_submenu_page()
      */
     public function register(?RootMenuPageInterface $root = null) : ?string;
 }

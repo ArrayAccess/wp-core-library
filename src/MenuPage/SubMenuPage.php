@@ -3,17 +3,25 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage;
 
+use ArrayAccess\WP\Libraries\Core\Exceptions\InvalidArgumentException;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\RootMenuPageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\SubMenuPagePageInterface;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\MenuPageRendererInterface;
+use ArrayAccess\WP\Libraries\Core\MenuPage\Renderer\CallbackRenderer;
+use ArrayAccess\WP\Libraries\Core\MenuPage\Renderer\FileRenderer;
 use ArrayAccess\WP\Libraries\Core\MenuPage\Traits\AdminMenuTrait;
 use ArrayAccess\WP\Libraries\Core\Service\Services;
+use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use function add_submenu_page;
 use function doing_action;
 use function function_exists;
 use function get_plugin_page_hookname;
 use function has_action;
+use function is_callable;
+use function is_file;
+use function is_string;
 use function remove_action;
+use function str_ends_with;
 
 /**
  * Submenu page that places the menu under a root menu.
@@ -112,5 +120,58 @@ class SubMenuPage implements SubMenuPagePageInterface
             add_action($actionMenu, $callbackAddSubmenuPage);
             return $hookName;
         }
+    }
+
+    /**
+     * @param array{
+     *     page_title: string,
+     *     menu_title: string,
+     *     capability: string,
+     *     menu_slug: string,
+     *     icon_url: string,
+     *     position: int,
+     *     render_in_network_admin: bool,
+     *     renderer: ?MenuPageRendererInterface|callable|string,
+     * } $data
+     * @return SubMenuPagePageInterface
+     */
+    public static function fromArray(array $data): SubMenuPagePageInterface
+    {
+        if (!Filter::shouldStrings(
+            $data['page_title']??null,
+            $data['menu_title']??null,
+            $data['capability']??null,
+            $data['menu_slug']??null
+        )) {
+            throw new InvalidArgumentException(
+                __('Invalid data for submenu page.', 'arrayaccess')
+            );
+        }
+
+        $data['icon_url'] = Filter::shouldString($data['icon_url']??'');
+        $data['position'] = Filter::shouldInteger($data['position']??null);
+        $menu = new static(
+            $data['menu_title'],
+            $data['page_title'],
+            $data['capability'],
+            $data['menu_slug'],
+            $data['icon_url'],
+            $data['position']
+        );
+        // default render in network admin is true
+        $menu->renderInNetworkAdmin((bool)($data['render_in_network_admin']??true));
+        $data['renderer'] ??= null;
+        // if renderer is object renderer
+        if (Filter::shouldInstanceOf($data['renderer'], MenuPageRendererInterface::class)) {
+            $menu->setRenderer($data['renderer']);
+        } elseif (is_callable($data['renderer'])) { // if renderer is callable
+            $menu->setRenderer(new CallbackRenderer($data['renderer']));
+        } elseif (is_string($data['renderer'])
+            && str_ends_with($data['renderer'], '.php')
+            && is_file($data['renderer'])
+        ) { // if renderer is a php file
+            $menu->setRenderer(new FileRenderer($data['renderer']));
+        }
+        return $menu;
     }
 }

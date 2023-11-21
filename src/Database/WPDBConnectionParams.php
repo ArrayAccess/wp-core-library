@@ -177,11 +177,7 @@ final class WPDBConnectionParams
             if ($host === null) {
                 $dbDir = defined('FQDBDIR') ? \FQDBDIR : ABSPATH . 'wp-content/database/';
                 $dbDir = rtrim($dbDir, '/') .'/';
-                if (defined('DB_FILE')) {
-                     $host = $dbDir . \DB_FILE;
-                } else {
-                    $host = $dbDir . '.ht.sqlite';
-                }
+                $host = defined('DB_FILE') ? $dbDir . \DB_FILE : $dbDir . '.ht.sqlite';
             }
             $init = 'PRAGMA encoding="UTF-8";PRAGMA foreign_keys = ON;PRAGMA journal_mode=WAL;';
         }

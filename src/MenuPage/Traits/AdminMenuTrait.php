@@ -39,6 +39,9 @@ trait AdminMenuTrait
      */
     protected string $iconUrl;
 
+    /**
+     * @var bool Whether to render in network admin
+     */
     protected bool $renderInNetworkAdmin = true;
 
     /**

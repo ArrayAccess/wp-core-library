@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Service\Interfaces;
 
 use Countable;
-use WP_Hook;
 
 /**
  * Service hook that helps to handle the hooks outside of core WordPress hooks.
@@ -89,7 +88,8 @@ interface HookInterface extends ServiceInterface, Countable
     /**
      * Get lists of hook names
      *
-     * @return array<string, WP_Hook>
+     * @return array<string, \WP_Hook>
+     * @noinspection PhpFullyQualifiedNameUsageInspection
      */
     public function getHookNames() : array;
 }

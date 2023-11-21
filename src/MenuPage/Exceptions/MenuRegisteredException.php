@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\MenuPage\Exceptions;
 
-use ArrayAccess\WP\Libraries\Core\Interfaces\CoreException;
-use RuntimeException;
+use ArrayAccess\WP\Libraries\Core\Exceptions\RuntimeException;
 use Throwable;
 
-class MenuRegisteredException extends RuntimeException implements CoreException
+class MenuRegisteredException extends RuntimeException
 {
     public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null)
     {

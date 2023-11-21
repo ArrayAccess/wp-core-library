@@ -6,7 +6,6 @@ namespace ArrayAccess\WP\Libraries\Core\Database;
 use ArrayAccess\WP\Libraries\Core\Database\Cache\WPCache;
 use Doctrine\Common\Cache\Psr6\CacheAdapter;
 use Doctrine\DBAL\Driver;
-use Doctrine\DBAL\DriverManager;
 
 /**
  * Doctrine Connection implementation support for WordPress

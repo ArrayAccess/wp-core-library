@@ -9,6 +9,9 @@ use PHPUnit\Framework\TestCase;
 use function get_option;
 use function microtime;
 
+/**
+ * Unit test to test Option class
+ */
 class OptionTest extends TestCase
 {
     protected Option $option;

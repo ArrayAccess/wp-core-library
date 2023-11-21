@@ -7,7 +7,6 @@ use ArrayAccess\WP\Libraries\Core\Database\Connection;
 use ArrayAccess\WP\Libraries\Core\Database\WPDBConnectionParams;
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\DatabaseInterface;
-use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Statement;
 
@@ -52,7 +51,8 @@ final class Database extends AbstractService implements DatabaseInterface
     }
 
     /**
-     * @throws Exception
+     * @throws \Doctrine\DBAL\Exception
+     * @noinspection PhpFullyQualifiedNameUsageInspection
      */
     public function query(
         string $sql,
@@ -67,7 +67,8 @@ final class Database extends AbstractService implements DatabaseInterface
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
+     * @noinspection PhpFullyQualifiedNameUsageInspection
      */
     public function prepare(string $sql): Statement
     {

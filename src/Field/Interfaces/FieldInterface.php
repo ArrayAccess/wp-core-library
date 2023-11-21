@@ -23,8 +23,9 @@ interface FieldInterface extends Stringable
      * Set the id
      *
      * @param string $id
+     * @return $this
      */
-    public function setId(string $id);
+    public function setId(string $id): static;
 
     /**
      * Get the id
@@ -36,8 +37,9 @@ interface FieldInterface extends Stringable
      * Set label
      *
      * @param ?string $label
+     * @return $this
      */
-    public function setLabel(?string $label);
+    public function setLabel(?string $label): static;
 
     /**
      * Get the label
@@ -49,8 +51,9 @@ interface FieldInterface extends Stringable
      * Set attribute name
      *
      * @param ?string|null $name null if no name
+     * @return $this
      */
-    public function setName(?string $name);
+    public function setName(?string $name): static;
 
     /**
      * Get the attribute name
@@ -64,15 +67,17 @@ interface FieldInterface extends Stringable
      *
      * @param string $attributeName
      * @param mixed $value
+     * @return $this
      */
-    public function setAttribute(string $attributeName, mixed $value);
+    public function setAttribute(string $attributeName, mixed $value): static;
 
     /**
      * Set the attributes
      *
      * @param array $attributes
+     * @return $this
      */
-    public function setAttributes(array $attributes);
+    public function setAttributes(array $attributes): static;
 
     /**
      * Check if the tag has the attribute
@@ -92,8 +97,9 @@ interface FieldInterface extends Stringable
      * Remove the attribute
      *
      * @param string $attributeName
+     * @return $this
      */
-    public function removeAttribute(string $attributeName);
+    public function removeAttribute(string $attributeName): static;
 
     /**
      * Get all attributes

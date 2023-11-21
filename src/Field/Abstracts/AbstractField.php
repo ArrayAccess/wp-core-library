@@ -58,6 +58,11 @@ abstract class AbstractField implements FieldInterface
     protected array $disallowRemoveAttributes = [];
 
     /**
+     * @var array<string> The disallowed attributes.
+     */
+    protected array $disallowedAttributes = [];
+
+    /**
      * @var int[] The increment id.
      */
     private static array $incrementId = [];
@@ -76,12 +81,12 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
-    public function setId(string $id): void
+    public function setId(string $id): static
     {
         $id = sanitize_html_class($id);
         if ($id === '') {
             if ($this->id !== '') {
-                return;
+                return $this;
             }
             self::$incrementId[$this->tagName] ??= 0;
             $id = sanitize_html_class(
@@ -89,6 +94,7 @@ abstract class AbstractField implements FieldInterface
             );
         }
         $this->id = $id;
+        return $this;
     }
 
     /**
@@ -108,9 +114,10 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
-    public function setLabel(?string $label): void
+    public function setLabel(?string $label): static
     {
         $this->label = $label;
+        return $this;
     }
 
     /**
@@ -121,9 +128,10 @@ abstract class AbstractField implements FieldInterface
         return $this->label;
     }
 
-    public function setName(?string $name): void
+    public function setName(?string $name): static
     {
         $this->setAttribute('name', $name);
+        return $this;
     }
 
     public function getName(): ?string
@@ -142,23 +150,26 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
-    public function setAttribute(string $attributeName, mixed $value): void
+    public function setAttribute(string $attributeName, mixed $value): static
     {
         $attributeName = HtmlAttributes::filterAttributeName($attributeName);
         if ($attributeName === '') {
-            return;
+            return $this;
+        }
+        if (in_array($attributeName, $this->disallowedAttributes, true)) {
+            return $this;
         }
         if ($attributeName === 'id') {
             $this->setId($value);
-            return;
+            return $this;
         }
         if ($attributeName === 'name') {
             if (!$value) {
                 unset($this->attributes['name']);
-                return;
+                return $this;
             }
             $this->attributes['name'] = $value;
-            return;
+            return $this;
         }
         /**
          * If the attribute is class, we will convert the value to array.
@@ -181,12 +192,13 @@ abstract class AbstractField implements FieldInterface
         }
 
         $this->attributes[$attributeName] = $value;
+        return $this;
     }
 
     /**
      * @inheritdoc
      */
-    public function setAttributes(array $attributes): void
+    public function setAttributes(array $attributes): static
     {
         $preservedAttributes = $this->attributes;
         $this->attributes = [];
@@ -206,6 +218,7 @@ abstract class AbstractField implements FieldInterface
                 $this->attributes[$attribute] = $preservedAttributes[$attribute]??null;
             }
         }
+        return $this;
     }
 
     /**
@@ -238,14 +251,15 @@ abstract class AbstractField implements FieldInterface
      * Remove an attribute.
      *
      * @param string $attributeName
-     * @return void
+     * @return $this
      */
-    public function removeAttribute(string $attributeName): void
+    public function removeAttribute(string $attributeName): static
     {
         if (in_array($attributeName, $this->disallowRemoveAttributes, true)) {
-            return;
+            return $this;
         }
         unset($this->attributes[$attributeName]);
+        return $this;
     }
 
     /**
@@ -259,14 +273,14 @@ abstract class AbstractField implements FieldInterface
         }
         $html = '';
         if ($inline) {
-            $html .= '<label for="' . $this->getId() . '">'
+            $html .= '<label class="aa-label aa-label-inline" for="' . $this->getId() . '">'
                 . '<span class="field-label">'
                 . $this->label
                 . '</span>'
                 . $tag
                 . '</label>';
         } else {
-            $html .= '<label for="' . $this->getId() . '">' . $this->label . '</label>' . $tag;
+            $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $this->label . '</label>' . $tag;
         }
         return $html;
     }

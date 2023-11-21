@@ -5,16 +5,19 @@ namespace ArrayAccess\WP\Libraries\Core\Util;
 
 use ReflectionClass;
 use function array_filter;
+use function bccomp;
+use function bcdiv;
+use function bcmul;
 use function checkdnsrr;
 use function class_exists;
 use function dirname;
-use function doubleval;
 use function explode;
 use function filter_var;
 use function in_array;
 use function ini_get;
 use function intval;
 use function is_array;
+use function is_int;
 use function is_numeric;
 use function is_object;
 use function min;
@@ -318,9 +321,9 @@ class Filter
         }
         $quanta = [
             // ========================= Origin ====
-            // 'YB' => 1208925819614629174706176,  // pow( 1024, 8)
-            // 'ZB' => 1180591620717411303424,  // pow( 1024, 7) << bigger than PHP_INT_MAX is 9223372036854775807
-            'EB' => 1152921504606846976,  // pow( 1024, 6)
+            'YB' => '1208925819614629174706176',  // pow( 1024, 8)
+            'ZB' => '1180591620717411303424',  // pow( 1024, 7) << bigger than PHP_INT_MAX is 9223372036854775807
+            'EB' => '1152921504606846976',  // pow( 1024, 6)
             'PB' => 1125899906842624,  // pow( 1024, 5)
             'TB' => 1099511627776,  // pow( 1024, 4)
             'GB' => 1073741824,     // pow( 1024, 3)
@@ -334,9 +337,10 @@ class Filter
          */
         $currentUnit = 'B';
         foreach ($quanta as $unit => $mag) {
-            if (doubleval($bytes) >= $mag) {
+            $real = bccomp((string) $mag, (string) $bytes);
+            if ($real === 1) {
                 $result = number_format(
-                    ($bytes / $mag),
+                    (float)bcdiv((string)$bytes, (string)$mag),
                     $decimals,
                     $decimalPoint,
                     $thousandSeparator
@@ -362,14 +366,18 @@ class Filter
      * Convert number of unit just for Ki(not kilo) metric based on 1024 (binary unit)
      *
      * @param string $size number with unit name 10M or 10MB
-     * @return int
+     * @return int|numeric-string integer if less than PHP_INT_MAX, string if bigger than PHP_INT_MAX
      */
-    public static function byteSize(string $size): int
+    public static function byteSize(string $size): int|string
     {
         $size = trim($size) ?: 0;
         if (!$size) {
             return 0;
         }
+
+        $intMax = (string) PHP_INT_MAX;
+        $size = (string) intval($size);
+
         // get size unit (MB = MiB = MIB = mib) case-insensitive
         // invalid format will return exponent of 1
         preg_match(
@@ -378,17 +386,21 @@ class Filter
             $match
         );
         // patch tolerant
-        return intval($size) * (match ($match[1] ?? null) {
-                'y', 'yb' => 1208925819614629174706176, // yottabyte
-                'z', 'zb' => 1180591620717411303424, // zettabyte << bigger than PHP_INT_MAX is 9223372036854775807
-                'e', 'eb' => 1152921504606846976, // exabyte
-                'p', 'pb' => 1125899906842624, // petabyte
-                't', 'tb' => 1099511627776, // terabyte
-                'g', 'gb' => 1073741824, // gigabyte
-                'm', 'mb' => 1048576, // megabyte
-                'k', 'kb' => 1024, // kilobyte
-                default => 1 // byte
+        $multiplication = (match ($match[1] ?? null) {
+                'y', 'yb' => '1208925819614629174706176', // yottabyte
+                'z', 'zb' => '1180591620717411303424', // zettabyte << bigger than PHP_INT_MAX is 9223372036854775807
+                'e', 'eb' => '1152921504606846976', // exabyte
+                'p', 'pb' => '1125899906842624', // petabyte
+                't', 'tb' => '1099511627776', // terabyte
+                'g', 'gb' => '1073741824', // gigabyte
+                'm', 'mb' => '1048576', // megabyte
+                'k', 'kb' => '1024', // kilobyte
+                default => '1' // byte
         });
+        // if size is bigger than PHP_INT_MAX, return string
+        $realSize = bcmul($size, $multiplication);
+        $compare = bccomp($realSize, $intMax);
+        return $compare === 1 ? $realSize : intval($realSize);
     }
 
     /**

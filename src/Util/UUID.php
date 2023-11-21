@@ -256,6 +256,7 @@ class UUID
         // get length of hex
         $length = strlen($hex);
         // loop hex
+        // using bcmul() && bcadd() binary calculator function & prevent loss of precision
         for ($i = 0; $i < $length; $i++) {
             // get the char from hex at position $i
             $dec = bcmul($dec, '16');

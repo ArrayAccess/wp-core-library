@@ -5,6 +5,6 @@ namespace ArrayAccess\WP\Libraries\Core\Interfaces;
 
 use Throwable;
 
-interface CoreException extends Throwable
+interface CoreExceptionInterface extends Throwable
 {
 }

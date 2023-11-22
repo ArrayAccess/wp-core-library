@@ -9,6 +9,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
+use ArrayAccess\WP\Libraries\Core\Service\Services\Rest;
 use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ReflectionClass;
@@ -66,7 +67,8 @@ final class Services implements ServicesInterface
         Hooks::class,
         Option::class,
         StatelessHash::class,
-        AdminMenu::class
+        AdminMenu::class,
+        Rest::class
     ];
 
     /**

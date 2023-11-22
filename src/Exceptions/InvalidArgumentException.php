@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Exceptions;
 
-use ArrayAccess\WP\Libraries\Core\Interfaces\CoreException;
+use ArrayAccess\WP\Libraries\Core\Interfaces\CoreExceptionInterface;
 
-class InvalidArgumentException extends \InvalidArgumentException implements CoreException
+class InvalidArgumentException extends \InvalidArgumentException implements CoreExceptionInterface
 {
 }

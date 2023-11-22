@@ -8,7 +8,7 @@ use Countable;
 /**
  * Service hook that helps to handle the hooks outside of core WordPress hooks.
  */
-interface HookInterface extends ServiceInterface, Countable
+interface HookInterface extends Countable
 {
     /**
      * Add a hook
@@ -84,6 +84,16 @@ interface HookInterface extends ServiceInterface, Countable
      * @return mixed
      */
     public function apply(string $name, mixed $value = null, mixed ...$args) : mixed;
+
+    /**
+     * Do the hook
+     *
+     * @param string $name
+     * @param mixed|null $value
+     * @param mixed ...$args
+     * @return void
+     */
+    public function do(string $name, mixed $value = null, mixed ...$args) : void;
 
     /**
      * Get lists of hook names

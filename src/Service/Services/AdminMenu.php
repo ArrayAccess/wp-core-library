@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 use ArrayAccess\WP\Libraries\Core\MenuPage\AdminRootMenu;
 use ArrayAccess\WP\Libraries\Core\MenuPage\RootMenuPage;
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
+use Throwable;
 
 /**
  * Service that help to create admin menu page.
@@ -13,7 +14,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
  * Create new admin root menu-object by given argument like constructor of root menu page.
  *
  * @uses \ArrayAccess\WP\Libraries\Core\MenuPage\Interfaces\RootMenuPageInterface
- * @uses \ArrayAccess\WP\Libraries\Core\MenuPage\AdminRootMenu
+ * @uses AdminRootMenu
  */
 
 class AdminMenu extends AbstractService
@@ -69,6 +70,34 @@ class AdminMenu extends AbstractService
     }
 
     /**
+     * Add root menu page. If the root menu page is already registered, it will be replaced.
+     *
+     * @param AdminRootMenu $rootMenu
+     * @return void
+     */
+    public function addRootMenu(AdminRootMenu $rootMenu): void
+    {
+        $this->registeredRootMenus[$rootMenu->getSlug()] = $rootMenu;
+    }
+
+    /**
+     * Remove root menu page by slug.
+     * Return the removed root menu page.
+     * If the root menu page is not registered, return null.
+     *
+     * @param string $slug
+     * @return ?AdminRootMenu
+     */
+    public function removeRootMenu(string $slug): ?AdminRootMenu
+    {
+        $rootMenu = $this->getRootMenu($slug);
+        if ($rootMenu) {
+            unset($this->registeredRootMenus[$slug]);
+        }
+        return $rootMenu;
+    }
+
+    /**
      * @param string $pageTitle
      * @param string $menuTitle
      * @param string $capability
@@ -94,7 +123,25 @@ class AdminMenu extends AbstractService
             $position
         );
         $adminMenu = new AdminRootMenu($rootMenu, $this->getServices()->get(Hooks::class));
-        $this->registeredRootMenus[$adminMenu->getSlug()] = $adminMenu;
+        $this->addRootMenu($adminMenu);
         return $adminMenu;
+    }
+
+    /**
+     * Create root menu page from an array. Return AdminRootMenu if success, Throwable if failed.
+     *
+     * @param array $data
+     * @return AdminRootMenu|Throwable
+     */
+    public function createFromArray(array $data): AdminRootMenu|Throwable
+    {
+        try {
+            $rootMenu = RootMenuPage::fromArray($data);
+            $adminMenu = new AdminRootMenu($rootMenu, $this->getServices()->get(Hooks::class));
+            $this->addRootMenu($adminMenu);
+            return $adminMenu;
+        } catch (Throwable $e) {
+            return $e;
+        }
     }
 }

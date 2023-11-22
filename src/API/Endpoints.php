@@ -17,6 +17,9 @@ use function preg_quote;
 use function preg_replace;
 use function remove_action;
 
+/**
+ * Handle endpoints for WordPress REST API.
+ */
 class Endpoints implements EndpointCollectionInterface
 {
     /**

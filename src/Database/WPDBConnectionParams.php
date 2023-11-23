@@ -70,7 +70,7 @@ final class WPDBConnectionParams
             'charset' => $this->getCharset(),
             'collation' => $this->getCollation(),
             'unix_socket' => $this->getSocket(),
-            'driverOptions' => $this->getPDOOptions()
+            'driverOptions' => $this->getPDOOptions(),
         ];
     }
 
@@ -91,8 +91,8 @@ final class WPDBConnectionParams
             'charset' => $this->getCharset(),
             'collation' => $this->getCollation(),
             'driverOptions' => [
-                'flags' => $client_flags
-            ]
+                'flags' => $client_flags,
+            ],
         ];
     }
 

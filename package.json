@@ -1,0 +1,33 @@
+{
+    "name": "arrayaccess-wp-core-library",
+    "version": "1.0.0",
+    "description": "This is a library for WordPress development based on Object-Oriented code. It provides a set of useful functions and classes.",
+    "license": "GPL-3.0-or-later",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ArrayAccess/wp-core-library.git"
+    },
+    "author": {
+        "name": "ArrayIterator",
+        "url": "https://www.arrayiterator.com/"
+    },
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/ArrayIterator"
+        }
+    ],
+    "bugs": {
+        "url": "https://github.com/ArrayAccess/wp-core-library/issues"
+    },
+    "homepage": "https://github.com/ArrayAccess/wp-core-library#readme",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {},
+    "devDependencies": {
+        "eslint": "^8.54.0",
+        "sass": "^1.69.5",
+        "stylelint": "^15.11.0"
+    }
+}

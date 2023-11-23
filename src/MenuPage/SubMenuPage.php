@@ -106,9 +106,7 @@ class SubMenuPage implements SubMenuPagePageInterface
             );
         };
 
-        if (!doing_action($actionMenu)
-            || did_action($actionMenu)
-        ) {
+        if (doing_action($actionMenu) || did_action($actionMenu)) {
             return $callbackAddSubmenuPage()?:null;
         } else {
             /**

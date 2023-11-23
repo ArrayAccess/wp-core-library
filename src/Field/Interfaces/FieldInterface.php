@@ -122,4 +122,27 @@ interface FieldInterface extends Stringable
      * @return static
      */
     public static function create(array $attributes = []) : static;
+
+    /**
+     * Validate the value
+     *
+     * @param mixed $value if no argument specified, use current set value
+     * @param bool $allowNull Whether to allow null value and attribute required return false
+     * @return bool
+     */
+    public function isValidValue(mixed $value = null, bool $allowNull = true): bool;
+
+    /**
+     * Filter the value
+     *
+     * @param mixed|null $value
+     */
+    public function filterValue(mixed $value = null);
+
+    /**
+     * Enqueue assets
+     * Called when the field is rendered, enqueue the assets
+     * called in hook wp_enqueue_scripts, admin_enqueue_scripts
+     */
+    public function enqueueAssets();
 }

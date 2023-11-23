@@ -4,13 +4,15 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function esc_html;
+use function func_num_args;
 
 /**
  * Single Select field
  */
-class Select extends AbstractField
+class Select extends AbstractField implements FormFieldTypeInterface
 {
     /**
      * @var string The tag name.
@@ -231,5 +233,29 @@ class Select extends AbstractField
                 . $html
                 . '</label>' : '<label class="aa-label" for="'
                 . $this->getId() . '">' . $this->label . '</label>' . $html;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isValidValue(mixed $value = null, bool $allowNull = true): bool
+    {
+        $value = func_num_args() === 0 ? $this->getSelected() : $value;
+        if ($allowNull && $value === null) {
+            return true;
+        }
+        // if the type is string|float|int and is in option, check has options.
+        if (is_string($value) || is_float($value) || is_int($value)) {
+            return $this->hasOption($value);
+        }
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getValue(): ?string
+    {
+        return $this->getSelected();
     }
 }

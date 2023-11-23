@@ -8,16 +8,20 @@ use DateTime;
 use DateTimeInterface;
 use Throwable;
 use function chr;
+use function dechex;
 use function hexdec;
 use function implode;
 use function md5;
+use function microtime;
 use function preg_match;
+use function sha1;
 use function sprintf;
 use function str_pad;
 use function str_replace;
 use function str_split;
 use function strlen;
 use function substr;
+use const STR_PAD_LEFT;
 
 /**
  * UUID class to generate and parse UUID.
@@ -259,9 +263,8 @@ class UUID
         // using bcmul() && bcadd() binary calculator function & prevent loss of precision
         for ($i = 0; $i < $length; $i++) {
             // get the char from hex at position $i
-            $dec = bcmul($dec, '16');
-            // add the decimal value of the hex char
-            $dec = bcadd($dec, (string) hexdec($hex[$i]));
+            $dec = Filter::multiplyInt($dec, 16);
+            $dec = Filter::addInt($dec, hexdec($hex[$i]));
         }
 
         return $dec;

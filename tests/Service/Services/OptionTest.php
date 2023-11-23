@@ -37,7 +37,7 @@ class OptionTest extends TestCase
     public function testSetOptions()
     {
         $data = [
-            microtime()
+            microtime(),
         ];
         $this->option->setOptions($data);
         $this->assertSame(
@@ -61,7 +61,7 @@ class OptionTest extends TestCase
     public function testRestoreOptions()
     {
         $data = [
-            microtime()
+            microtime(),
         ];
         $this->option->setOptions($data);
         $this->option->restoreOptions();

@@ -187,7 +187,7 @@ class IP
         $range = (int) $range;
         return [
             long2ip((ip2long($ip)) & ((-1 << (32 - $range)))),
-            long2ip((ip2long($ip)) + pow(2, (32 - $range)) - 1)
+            long2ip((ip2long($ip)) + pow(2, (32 - $range)) - 1),
         ];
     }
 

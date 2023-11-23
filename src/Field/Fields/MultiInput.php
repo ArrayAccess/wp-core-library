@@ -5,6 +5,7 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function array_filter;
@@ -19,7 +20,7 @@ use function sprintf;
  * Build with the same name and different value.
  * Only support radio and checkbox.
  */
-class MultiInput extends AbstractField implements MultipleFieldInterface
+class MultiInput extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
 {
     protected string $tagName = 'input';
 
@@ -32,13 +33,6 @@ class MultiInput extends AbstractField implements MultipleFieldInterface
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [];
-
-    /**
-     * @var array|string[] The disallowing remove attributes.
-     */
-    protected array $disallowRemoveAttributes = [
-        'type'
-    ];
 
     /**
      * @param bool $isRadio by default, is true (radio), false for checkbox
@@ -100,6 +94,39 @@ class MultiInput extends AbstractField implements MultipleFieldInterface
     public function getFields() : array
     {
         return $this->fields;
+    }
+
+    /**
+     * Set checked field
+     *
+     * @param FieldInterface $field
+     * @return $this
+     */
+    public function setChecked(FieldInterface $field): static
+    {
+        $id = spl_object_hash($field);
+        foreach ($this->fields as $f) {
+            if (spl_object_hash($f) === $id) {
+                $f->setAttribute('checked', true);
+            } else {
+                $f->removeAttribute('checked');
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getValue(): mixed
+    {
+        foreach ($this->fields as $field) {
+            if ($field->getAttribute('checked')) {
+                return $field->getAttribute('value');
+            }
+        }
+
+        return null;
     }
 
     /**

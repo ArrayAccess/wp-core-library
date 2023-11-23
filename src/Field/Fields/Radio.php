@@ -7,26 +7,25 @@ use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\StandardInputAttributeTrait;
 
-class Input extends AbstractField implements FormFieldTypeInterface
+class Radio extends AbstractField implements FormFieldTypeInterface
 {
     use StandardInputAttributeTrait;
+
+    /**
+     * @var string The tag name.
+     */
+    protected string $tagName = 'input';
 
     /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
-        'type' => 'text',
+        'type' => 'radio',
     ];
 
-    /**
-     * Set input type
-     *
-     * @param string $type input type
-     * @return $this for chaining
-     */
-    public function setType(string $type): static
+    public function setChecked(bool $checked): static
     {
-        $this->setAttribute('type', trim($type)?:$this->attributes['type']);
+        $this->attributes['checked'] = $checked ? true : '';
         return $this;
     }
 }

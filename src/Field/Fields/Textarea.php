@@ -4,21 +4,33 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Traits\StandardInputAttributeTrait;
 
-class Textarea extends AbstractField
+class Textarea extends AbstractField implements FormFieldTypeInterface
 {
+    use StandardInputAttributeTrait;
+
     /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
         'rows' => 5,
-        'cols' => 50
     ];
 
     /**
      * @var array|string[] The disallowing remove attributes.
      */
     protected array $disallowRemoveAttributes = [];
+
+    /**
+     * Textarea does not have a type attribute.
+     *
+     * @var array|string[] The disallowing attributes.
+     */
+    protected array $disallowedAttributes = [
+        'type',
+    ];
 
     /**
      * Set rows

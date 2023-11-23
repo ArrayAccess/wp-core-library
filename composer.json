@@ -35,9 +35,9 @@
         "doctrine/sql-formatter": "A lightweight formatter for SQL queries."
     },
     "scripts": {
-        "phpcs": "vendor/bin/phpcs --standard=phpcs.xml",
-        "phpcbf": "vendor/bin/phpcbf --standard=phpcs.xml",
-        "phpunit": "vendor/bin/phpunit --configuration phpunit.xml"
+        "phpcs": "vendor/bin/phpcs --standard=phpcs.xml.dist",
+        "phpcbf": "vendor/bin/phpcbf --standard=phpcs.xml.dist",
+        "phpunit": "vendor/bin/phpunit --configuration phpunit.xml.dist"
     },
     "autoload": {
         "psr-0": {

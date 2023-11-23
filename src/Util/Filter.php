@@ -3,37 +3,53 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Util;
 
+use ArrayAccess\WP\Libraries\Core\Exceptions\RuntimeException;
 use ReflectionClass;
 use function array_filter;
+use function bcadd;
 use function bccomp;
-use function bcdiv;
 use function bcmul;
 use function checkdnsrr;
 use function class_exists;
 use function dirname;
 use function explode;
 use function filter_var;
+use function function_exists;
 use function in_array;
 use function ini_get;
+use function intdiv;
 use function intval;
 use function is_array;
+use function is_bool;
+use function is_callable;
+use function is_float;
 use function is_int;
 use function is_numeric;
 use function is_object;
+use function is_string;
+use function ltrim;
 use function min;
 use function number_format;
 use function preg_match;
 use function preg_replace;
+use function rtrim;
+use function str_pad;
+use function str_repeat;
 use function str_replace;
 use function str_starts_with;
+use function strlen;
 use function strrchr;
 use function strtolower;
 use function strtoupper;
+use function strval;
 use function substr;
 use function trim;
 use const DIRECTORY_SEPARATOR;
 use const FILTER_VALIDATE_EMAIL;
+use const PHP_INT_MAX;
+use const PHP_INT_SIZE;
 use const PHP_SAPI;
+use const STR_PAD_LEFT;
 
 /**
  * Class collection for various filtering
@@ -45,6 +61,58 @@ class Filter
      * @var array<class-string, class-string> class name cache
      */
     private static array $cachedClasses = [];
+
+    /**
+     * Convert a number if contain scientific notation to standard notation
+     * e.g.: 1.2e+3 to 1200
+     *
+     * @param mixed $number
+     * @return string
+     */
+    public static function number(mixed $number) : ?string
+    {
+        if (!is_numeric($number)) {
+            return null;
+        }
+
+        // replace E to e
+        $number = str_replace('E', 'e', strval($number));
+        // Convert a number in scientific notation to standard notation
+        if (str_contains($number, 'e')) {
+            [$mantissa, $exponent] = explode('e', $number);
+            if (($minus = $mantissa[0] === '-') || $mantissa[0] === '+') {
+                $mantissa = substr($mantissa, 1);
+            }
+            if (($isDecimalPoint = $exponent[0] === '-') || $exponent[0] === '+') {
+                $exponent = substr($exponent, 1);
+            }
+            $exponent = (int)$exponent;
+            if ($exponent >= PHP_INT_MAX) {
+                throw new RuntimeException(
+                    __('Exponent is too large', 'arrayaccess')
+                );
+            }
+            $mantissa = str_replace('.', '', $mantissa);
+            if ($isDecimalPoint) {
+                // - is decimal point, convert mantissa
+                $mantissa = substr(str_repeat('0', $exponent - 1) . $mantissa, 0, $exponent + 1);
+                $mantissa = '0.' . $mantissa;
+            } else {
+                $mantissa = str_pad($mantissa, $exponent, '0');
+                if (strlen($mantissa) > $exponent) {
+                    $mantissa = substr($mantissa, 0, $exponent+1)
+                        . '.'
+                        . substr($mantissa, $exponent + 1, strlen($mantissa) - $exponent);
+                }
+                // trim right padding
+                $mantissa = rtrim($mantissa, '.0');
+            }
+
+            $number = $minus ? '-' . $mantissa : $mantissa;
+        }
+
+        return $number;
+    }
 
     /**
      * Check is valid function name
@@ -340,7 +408,7 @@ class Filter
             $real = bccomp((string) $mag, (string) $bytes);
             if ($real === 1) {
                 $result = number_format(
-                    (float)bcdiv((string)$bytes, (string)$mag),
+                    $bytes/$mag,
                     $decimals,
                     $decimalPoint,
                     $thousandSeparator
@@ -375,7 +443,6 @@ class Filter
             return 0;
         }
 
-        $intMax = (string) PHP_INT_MAX;
         $size = (string) intval($size);
 
         // get size unit (MB = MiB = MIB = mib) case-insensitive
@@ -387,20 +454,195 @@ class Filter
         );
         // patch tolerant
         $multiplication = (match ($match[1] ?? null) {
-                'y', 'yb' => '1208925819614629174706176', // yottabyte
-                'z', 'zb' => '1180591620717411303424', // zettabyte << bigger than PHP_INT_MAX is 9223372036854775807
-                'e', 'eb' => '1152921504606846976', // exabyte
-                'p', 'pb' => '1125899906842624', // petabyte
-                't', 'tb' => '1099511627776', // terabyte
-                'g', 'gb' => '1073741824', // gigabyte
-                'm', 'mb' => '1048576', // megabyte
-                'k', 'kb' => '1024', // kilobyte
-                default => '1' // byte
+            'y', 'yb' => '1208925819614629174706176', // yottabyte
+            'z', 'zb' => '1180591620717411303424', // zettabyte << bigger than PHP_INT_MAX is 9223372036854775807
+            'e', 'eb' => '1152921504606846976', // exabyte
+            'p', 'pb' => '1125899906842624', // petabyte
+            't', 'tb' => '1099511627776', // terabyte
+            'g', 'gb' => '1073741824', // gigabyte
+            'm', 'mb' => '1048576', // megabyte
+            'k', 'kb' => '1024', // kilobyte
+            default => '1' // byte
         });
         // if size is bigger than PHP_INT_MAX, return string
-        $realSize = bcmul($size, $multiplication);
-        $compare = bccomp($realSize, $intMax);
-        return $compare === 1 ? $realSize : intval($realSize);
+        $realSize = self::multiplyInt($size, $multiplication);
+        return $realSize <= PHP_INT_SIZE ? intval($realSize) : $realSize;
+    }
+
+    /**
+     * Multiply big numbers. (bcmath compat)
+     *
+     * @param numeric-string $a numeric string
+     * @return numeric-string
+     */
+    public static function multiplyInt(mixed $a, mixed $b) : string
+    {
+        static $bcExist = null;
+        $bcExist ??= function_exists('bcmul');
+        $a = self::number($a);
+        $b = self::number($b);
+        if ($bcExist) {
+            return bcmul($a, $b);
+        }
+
+        $x = strlen($a);
+        $y = 2;
+        $maxDigits =  PHP_INT_SIZE === 4 ? 9 : 18;
+        $maxDigits = intdiv($maxDigits, 2);
+        $complement = 10 ** $maxDigits;
+
+        $result = '0';
+
+        for ($i = $x - $maxDigits;; $i -= $maxDigits) {
+            $blockALength = $maxDigits;
+
+            if ($i < 0) {
+                $blockALength += $i;
+                /** @psalm-suppress LoopInvalidation */
+                $i = 0;
+            }
+
+            $blockA = (int) substr($a, $i, $blockALength);
+
+            $line = '';
+            $carry = 0;
+
+            for ($j = $y - $maxDigits;; $j -= $maxDigits) {
+                $blockBLength = $maxDigits;
+
+                if ($j < 0) {
+                    $blockBLength += $j;
+                    /** @psalm-suppress LoopInvalidation */
+                    $j = 0;
+                }
+
+                $blockB = (int) substr($b, $j, $blockBLength);
+
+                $mul = $blockA * $blockB + $carry;
+                $value = $mul % $complement;
+                $carry = ($mul - $value) / $complement;
+
+                $value = (string) $value;
+                $value = str_pad($value, $maxDigits, '0', STR_PAD_LEFT);
+
+                $line = $value . $line;
+
+                if ($j === 0) {
+                    break;
+                }
+            }
+
+            if ($carry !== 0) {
+                $line = $carry . $line;
+            }
+
+            $line = ltrim($line, '0');
+
+            if ($line !== '') {
+                $line .= str_repeat('0', $x - $blockALength - $i);
+                $result = self::addInt($result, $line);
+            }
+
+            if ($i === 0) {
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Add big numbers.
+     *
+     * @param numeric-string $a
+     * @param numeric-string $b
+     * @return numeric-string $a + $b
+     */
+    public static function addInt(mixed $a, mixed $b) : string
+    {
+        static $bcExist = null;
+        $bcExist ??= function_exists('bcadd');
+
+        $b = (string) $b;
+        $a = self::number($a);
+        $b = self::number($b);
+        if ($bcExist) {
+            return bcadd($a, $b);
+        }
+
+        $maxDigits =  PHP_INT_SIZE === 4 ? 9 : 18;
+        [$a, $b, $length] = self::padNumber($a, $b);
+
+        $carry = 0;
+        $result = '';
+
+        for ($i = $length - $maxDigits;; $i -= $maxDigits) {
+            $blockLength = $maxDigits;
+
+            if ($i < 0) {
+                $blockLength += $i;
+                /** @psalm-suppress LoopInvalidation */
+                $i = 0;
+            }
+
+            /** @var numeric $blockA */
+            $blockA = substr($a, $i, $blockLength);
+
+            /** @var numeric $blockB */
+            $blockB = substr($b, $i, $blockLength);
+
+            $sum = (string) ($blockA + $blockB + $carry);
+            $sumLength = strlen($sum);
+
+            if ($sumLength > $blockLength) {
+                $sum = substr($sum, 1);
+                $carry = 1;
+            } else {
+                if ($sumLength < $blockLength) {
+                    $sum = str_repeat('0', $blockLength - $sumLength) . $sum;
+                }
+                $carry = 0;
+            }
+
+            $result = $sum . $result;
+
+            if ($i === 0) {
+                break;
+            }
+        }
+
+        if ($carry === 1) {
+            $result = '1' . $result;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Pads the left of one of the given numbers with zeros if necessary to make both numbers the same length.
+     *
+     * The numbers must only consist of digits, without leading minus sign.
+     *
+     * @return array{string, string, int}
+     */
+    private static function padNumber(string $a, string $b) : array
+    {
+        $x = strlen($a);
+        $y = strlen($b);
+
+        if ($x > $y) {
+            $b = str_repeat('0', $x - $y) . $b;
+
+            return [$a, $b, $x];
+        }
+
+        if ($x < $y) {
+            $a = str_repeat('0', $y - $x) . $a;
+
+            return [$a, $b, $y];
+        }
+
+        return [$a, $b, $x];
     }
 
     /**

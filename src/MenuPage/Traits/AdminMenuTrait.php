@@ -30,9 +30,9 @@ trait AdminMenuTrait
     protected string $capability;
 
     /**
-     * @var int The position in the menu order this menu should appear.
+     * @var ?int The position in the menu order this menu should appear.
      */
-    protected int $position;
+    protected ?int $position;
 
     /**
      * @var string The URL to the menu icon.
@@ -181,7 +181,7 @@ trait AdminMenuTrait
      */
     public function isAllowed(): bool
     {
-        return current_user_can($this->getCapability());
+        return !function_exists('current_user_can') || current_user_can($this->getCapability());
     }
 
     /**

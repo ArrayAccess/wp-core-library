@@ -23,6 +23,7 @@ use function is_numeric;
 use function is_object;
 use function is_readable;
 use function is_string;
+use function method_exists;
 use function realpath;
 use function restore_error_handler;
 use function set_error_handler;
@@ -415,9 +416,10 @@ class Consolidator
         object $object
     ): Closure {
         $reflectedClosure = new ReflectionFunction($closure);
-        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
         $isBindable = (
-            !$reflectedClosure->isStatic()
+            (!method_exists($reflectedClosure, 'isStatic')
+                || ! $reflectedClosure->isStatic()
+            )
             || !$reflectedClosure->getClosureScopeClass()
             || $reflectedClosure->getClosureThis() !== null
         );

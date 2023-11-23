@@ -7,11 +7,13 @@ use JsonSerializable;
 use Stringable;
 use function array_filter;
 use function explode;
+use function force_balance_tags;
 use function htmlspecialchars;
 use function implode;
 use function in_array;
 use function intval;
 use function is_bool;
+use function is_float;
 use function is_iterable;
 use function is_numeric;
 use function is_scalar;
@@ -24,7 +26,9 @@ use function strtolower;
 use function trim;
 use const ENT_QUOTES;
 use const ENT_SUBSTITUTE;
+use const INF;
 use const JSON_UNESCAPED_SLASHES;
+use const PHP_INT_MAX;
 
 /**
  * Class handles html attributes and html tags
@@ -201,17 +205,40 @@ class HtmlAttributes
         "usemap" => "usemap",
         "value" => "value",
         "width" => "width",
-        "wrap" => "wrap"
+        "wrap" => "wrap",
+        // schema.org attributes
+        "itemscope" => "itemscope",
+        "itemtype" => "itemtype",
+        "itemprop" => "itemprop",
+        "itemref" => "itemref",
+        "itemid" => "itemid",
+        "itemgroup" => "itemgroup",
     ];
 
     /**
      * Attributes boolean true types
      */
     public const ATTRIBUTES_BOOLEAN_TRUE_TYPES = [
+        // empty value is true on a boolean type
         "checked" => "",
         "readonly" => "",
         "selected" => "",
-        "disabled" => ""
+        "disabled" => "",
+        "required" => "",
+        "multiple" => "",
+        "autofocus" => "",
+        "autoplay" => "",
+        "controls" => "",
+        "defer" => "",
+        "ismap" => "",
+        "async" => "",
+        "hidden" => "",
+        "loop" => "",
+        "muted" => "",
+        "novalidate" => "",
+        "open" => "",
+        "reversed" => "",
+        "spellcheck" => "",
     ];
 
     /**
@@ -243,7 +270,7 @@ class HtmlAttributes
      */
     public const NO_ATTRIBUTES = [
         'class',
-        'id'
+        'id',
     ];
 
     /**
@@ -263,7 +290,7 @@ class HtmlAttributes
         'param',
         'source',
         'track',
-        'wbr'
+        'wbr',
     ];
 
     /**
@@ -280,6 +307,33 @@ class HtmlAttributes
     public static function buildAttributes(array $attributes) : string
     {
         return implode(' ', self::buildAttributesArray($attributes));
+    }
+
+    /**
+     * @param string $attributeName
+     * @param $value
+     * @return bool returning true if value is boolean attribute enabled
+     */
+    public static function isBooleanAttributeEnabled(string $attributeName, $value): bool
+    {
+        $attributeName = strtolower(trim($attributeName));
+        if (!isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$attributeName])) {
+            return false;
+        }
+        return (
+            $value === true
+            || $value === '1'
+            || $value === 1
+            || (
+                is_string($value)
+                && (
+                    $value === ''
+                    || strtolower(trim($value)) === 'true'
+                    || strtolower(trim($value)) === 'yes'
+                    || strtolower(trim($value)) === $attributeName
+                )
+            )
+        );
     }
 
     /**
@@ -307,9 +361,16 @@ class HtmlAttributes
             if ($lowerKey === 'html') {
                 continue;
             }
-            if (is_bool($value)) {
+            // if boolean attribute & empty string, value is true
+            if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
+                if (self::isBooleanAttributeEnabled($lowerKey, $value)) {
+                    $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
+                } else {
+                    continue;
+                }
+            } elseif (is_bool($value)) {
                 if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
-                    // skip if false
+                    // skip if false, empty string is true
                     if (!$value) {
                         continue;
                     }
@@ -317,13 +378,16 @@ class HtmlAttributes
                 } else {
                     $value = $value ? 'true' : 'false';
                 }
-            } elseif ($value instanceof Stringable
-                || is_scalar($value)
-            ) {
+            } elseif ($value instanceof Stringable || is_scalar($value)) {
+                // if it was a float & more than PHP_INT_MAX commonly contain E,
+                // convert with bc function
+                if (is_float($value) && $value > PHP_INT_MAX) {
+                    $value = '';
+                }
                 $value = (string) $value;
             } /** @noinspection PhpConditionAlreadyCheckedInspection */ elseif ($value instanceof JsonSerializable) {
                 $value = json_encode($value, JSON_UNESCAPED_SLASHES);
-            } elseif ($value === null) {
+            } elseif ($value === null || $value === INF) {
                 // null is true
                 $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey] ?? '';
             }
@@ -384,7 +448,8 @@ class HtmlAttributes
      */
     public static function createHtmlTag(string $tagName, array $attributes): ?string
     {
-        $tag = strtolower(trim($tagName));
+        $tag = self::filterAttributeName($tagName);
+        $tag = strtolower(trim($tag));
         if (preg_match('~[^a-z0-9-_]~', $tag)) {
             return null;
         }
@@ -393,8 +458,13 @@ class HtmlAttributes
         // especial textarea tag
         if ($tag === 'textarea') {
             $html = htmlspecialchars($attributes['value']??'');
+            unset($attributes['value']);
         }
         $html = is_scalar($html) || $html instanceof Stringable ? (string) $html : '';
+        // if contains html tag, force balance tag
+        if (str_contains($html, '<')) {
+            $html = force_balance_tags($html);
+        }
         $attributeString = self::buildAttributes($attributes);
         $attributeString = $attributeString !== '' ? " $attributeString" : '';
         return in_array($tagName, self::SELF_CLOSING_TAG)

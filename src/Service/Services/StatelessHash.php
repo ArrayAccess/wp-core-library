@@ -215,7 +215,7 @@ class StatelessHash extends AbstractService
             $userIdCalcHex,
             $agentHash,
             $startTimeHex,
-            $forever
+            $forever,
         ] = $matches;
         // get user id from hexdec($userIdCalcHex) - hexdec(substr($randomHex, -4))
         $userId = hexdec($userIdCalcHex) - hexdec(substr($random, -4));

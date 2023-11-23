@@ -6,16 +6,22 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Abstracts;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use ReflectionClass;
+use ReflectionObject;
 use Stringable;
 use function array_filter;
 use function array_key_exists;
 use function array_map;
+use function did_action;
+use function doing_action;
 use function explode;
 use function in_array;
 use function is_array;
 use function is_iterable;
+use function is_null;
+use function is_numeric;
 use function is_string;
 use function sanitize_html_class;
+use function str_contains;
 use function strtolower;
 
 /**
@@ -55,7 +61,9 @@ abstract class AbstractField implements FieldInterface
      *
      * @var array<string>
      */
-    protected array $disallowRemoveAttributes = [];
+    protected array $disallowRemoveAttributes = [
+        'type'
+    ];
 
     /**
      * @var array<string> The disallowed attributes.
@@ -66,6 +74,11 @@ abstract class AbstractField implements FieldInterface
      * @var int[] The increment id.
      */
     private static array $incrementId = [];
+
+    /**
+     * @var bool Whether the asset is enqueued.
+     */
+    private bool $assetEnqueued = false;
 
     public function __construct()
     {
@@ -128,12 +141,18 @@ abstract class AbstractField implements FieldInterface
         return $this->label;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function setName(?string $name): static
     {
         $this->setAttribute('name', $name);
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getName(): ?string
     {
         return $this->getAttribute('name');
@@ -295,8 +314,130 @@ abstract class AbstractField implements FieldInterface
         return $instance;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function isValidValue(mixed $value = null, bool $allowNull = true): bool
+    {
+        $required = $this->getAttribute('required');
+        if (is_null($value) && $allowNull) {
+            return !HtmlAttributes::isBooleanAttributeEnabled('required', $required);
+        }
+        $minLength = $this->getAttribute('minlength');
+        $maxLength = $this->getAttribute('maxlength');
+        if (is_numeric($minLength)) {
+            $minLength = (int) $minLength;
+            if (is_string($value) && strlen($value) < $minLength) {
+                return false;
+            }
+            return true;
+        }
+        if (is_numeric($maxLength)) {
+            $maxLength = (int)$maxLength;
+            if (is_string($value) && strlen($value) > $maxLength) {
+                return false;
+            }
+            return true;
+        }
+        return ! empty($value) || !HtmlAttributes::isBooleanAttributeEnabled(
+            'required',
+            $required
+        );
+    }
+
     public function __toString(): string
     {
         return $this->build();
+    }
+
+    /**
+     * Get the debug info.
+     * This method will be called when the object is used in var_dump().
+     * This method will redact the value attribute, data-* attribute, password, and key.
+     *
+     * @return array The debug info.
+     */
+    public function __debugInfo(): array
+    {
+        $reflection = new ReflectionObject($this);
+        $properties = $reflection->getProperties();
+        $attributes = [];
+        $currentClass = $reflection->getName();
+        foreach ($properties as $property) {
+            $isPrivate = $property->isPrivate();
+            if ($isPrivate) {
+                $property->setAccessible(true);
+            }
+            $value = $property->getValue($this);
+            $key = $property->getName();
+            $isAttribute = $key === 'attributes';
+            // Redact the options property.
+            if ($key === 'options' && is_array($value)) {
+                $inc = 0;
+                $val = [];
+                foreach ($value as $v) {
+                    $val['<redacted>:' . $inc++] = $v;
+                }
+                $value = $val;
+            }
+            if ($currentClass !== $property->getDeclaringClass()->getName()) {
+                $key = $property->getDeclaringClass()->getName() . '::' . $key;
+            }
+            if ($isPrivate || !$property->isPublic()) {
+                $key .= $isPrivate ? ':private' : ':protected';
+            }
+            $attributes[$key] = $value;
+            if ($isAttribute) {
+                foreach ($attributes[$key] as $k => $value) {
+                    if ($k === 'value'
+                        || str_starts_with($k, 'data-')
+                        || str_contains($k, 'password')
+                        || str_contains($k, 'key')
+                    ) {
+                        $attributes[$key][$k] = '<redacted>';
+                    }
+                }
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function filterValue(mixed $value = null): mixed
+    {
+        return $value;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    final public function enqueueAssets() : static
+    {
+        if ($this->assetEnqueued) {
+            return $this;
+        }
+        if (doing_action('wp_enqueue_scripts')
+            || doing_action('admin_enqueue_scripts')
+            || did_action('wp_enqueue_scripts')
+            || did_action('admin_enqueue_scripts')
+        ) {
+            $this->assetEnqueued = true;
+            return $this->doEnqueueAssets();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Enqueue assets. Called when the field is rendered, enqueue the assets.
+     *
+     * @return $this The current instance.
+     */
+    protected function doEnqueueAssets() : static
+    {
+        return $this;
     }
 }

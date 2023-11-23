@@ -68,7 +68,7 @@ final class Services implements ServicesInterface
         Option::class,
         StatelessHash::class,
         AdminMenu::class,
-        Rest::class
+        Rest::class,
     ];
 
     /**

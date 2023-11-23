@@ -5,13 +5,23 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
 
 class CodeEditor extends Textarea
 {
+    /**
+     * Code editor is textarea
+     *
+     * @var string The default tag name.
+     */
     protected string $tagName = 'textarea';
+
     /**
      * @var array|string[] The default attributes.
      */
     protected array $defaultClass = [
         'large-text'
     ];
+
+    /**
+     * @var array|int[] The default attributes.
+     */
     protected array $attributes = [
         'rows' => 12,
     ];
@@ -50,18 +60,33 @@ class CodeEditor extends Textarea
         return $this->codeEditorOptions;
     }
 
+    /**
+     * Set code editor type
+     *
+     * @param string $type The type of code editor to use.
+     * @return $this
+     */
     public function setCodeEditorType(string $type): static
     {
         $this->codeEditorOptions['type'] = $type;
         return $this;
     }
 
+    /**
+     * Set code editor code mirror options
+     *
+     * @param array $options
+     * @return $this
+     */
     public function setCodeEditorCodeMirrorOptions(array $options): static
     {
         $this->codeEditorOptions['codemirror'] = $options;
         return $this;
     }
 
+    /**
+     * @inheritdoc
+     */
     protected function doEnqueueAssets(): static
     {
         // enqueue code editor

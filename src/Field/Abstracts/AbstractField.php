@@ -419,15 +419,14 @@ abstract class AbstractField implements FieldInterface
         if ($this->assetEnqueued) {
             return $this;
         }
+        $this->assetEnqueued = true;
         if (doing_action('wp_enqueue_scripts')
             || doing_action('admin_enqueue_scripts')
             || did_action('wp_enqueue_scripts')
             || did_action('admin_enqueue_scripts')
         ) {
-            $this->assetEnqueued = true;
             return $this->doEnqueueAssets();
         }
-
         return $this;
     }
 

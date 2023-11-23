@@ -22,10 +22,13 @@ use function sprintf;
  */
 class MultiInput extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
 {
-    protected string $tagName = 'input';
+    /**
+     * @var string The tag name.
+     */
+    protected string $tagName = 'div';
 
     /**
-     * @var array<FieldInterface>
+     * @var array<FieldInterface> The fields.
      */
     protected array $fields = [];
 

@@ -25,6 +25,12 @@ class Email extends AbstractField implements FormFieldTypeInterface
         'type' => 'email',
     ];
 
+    /**
+     * Set email address
+     *
+     * @param string $email
+     * @return $this
+     */
     public function setEmail(string $email): static
     {
         return $this->setValue($email);

@@ -23,6 +23,12 @@ class Radio extends AbstractField implements FormFieldTypeInterface
         'type' => 'radio',
     ];
 
+    /**
+     * Set checked attribute
+     *
+     * @param bool $checked true to set checked attribute, false to remove
+     * @return $this for chaining
+     */
     public function setChecked(bool $checked): static
     {
         $this->attributes['checked'] = $checked ? true : '';

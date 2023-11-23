@@ -13,6 +13,9 @@ class Slider extends AbstractField implements FormFieldTypeInterface
 {
     use StandardInputAttributeTrait;
 
+    /**
+     * @var string The tag name.
+     */
     protected string $tagName = 'input';
 
     /**

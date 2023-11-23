@@ -12,6 +12,11 @@ class Textarea extends AbstractField implements FormFieldTypeInterface
     use StandardInputAttributeTrait;
 
     /**
+     * @var string The default tag name.
+     */
+    protected string $tagName = 'textarea';
+
+    /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [

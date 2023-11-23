@@ -19,6 +19,7 @@ use function wp_script_is;
 class ColorPicker extends AbstractField implements FormFieldTypeInterface
 {
     use StandardInputAttributeTrait;
+
     /**
      * @var string The tag name.
      */

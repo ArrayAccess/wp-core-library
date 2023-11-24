@@ -25,9 +25,8 @@
         "test": "tests"
     },
     "scripts": {
-        "compile-css": "sass --no-source-map --style=compressed --watch assets/scss:dist/css",
-        "copy-js-files": "copyfiles -u 1 assets/js/* dist/",
-        "compile-prod": "npm-run-all compile-css copy-js-files",
+        "compile-css": "sass --no-source-map --style=compressed --watch assets/scss:assets/css",
+        "compile-prod": "npm-run-all compile-css",
         "eslint": "eslint assets/js/*.js"
     },
     "devDependencies": {

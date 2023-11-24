@@ -7,6 +7,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
+use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Rest;
@@ -63,12 +64,13 @@ final class Services implements ServicesInterface
      * @var array<class-string<ObjectService>>
      */
     public const DEFAULT_SERVICES = [
+        AdminMenu::class,
         Database::class,
+        DefaultAssets::class,
         Hooks::class,
         Option::class,
-        StatelessHash::class,
-        AdminMenu::class,
         Rest::class,
+        StatelessHash::class,
     ];
 
     /**
@@ -85,6 +87,9 @@ final class Services implements ServicesInterface
             }
             $this->coreService[$serviceId] = true;
         }
+
+        // init the default assets
+        $this->get(DefaultAssets::class)?->init();
     }
 
     /**

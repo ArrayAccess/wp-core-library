@@ -453,8 +453,11 @@ class HtmlAttributes
         if (preg_match('~[^a-z0-9-_]~', $tag)) {
             return null;
         }
+
+        // wrapper tag
+        $wrapper = $attributes['wrapper']??null;
         $html = $attributes['html']??'';
-        unset($attributes['html']);
+        unset($attributes['html'], $attributes['wrapper']);
         // especial textarea tag
         if ($tag === 'textarea') {
             $html = htmlspecialchars($attributes['value']??'');
@@ -467,8 +470,30 @@ class HtmlAttributes
         }
         $attributeString = self::buildAttributes($attributes);
         $attributeString = $attributeString !== '' ? " $attributeString" : '';
-        return in_array($tagName, self::SELF_CLOSING_TAG)
+        $html = in_array($tagName, self::SELF_CLOSING_TAG)
             ? "<{$tag}{$attributeString}>$html"
             : "<{$tag}{$attributeString}>$html</{$tag}>";
+        // if $wrapper valid tag name, render
+        if ($wrapper && is_string($wrapper)) {
+            $wrapper = self::filterAttributeName($wrapper);
+            $wrapper = strtolower(trim($wrapper));
+            if (!preg_match('~[^a-z0-9-_]~', $wrapper)) {
+                $classes = [
+                    'aa-wrapper-attribute',
+                    'aa-wrapper-attribute-'.sanitize_html_class($tag)
+                ];
+                $id = $attributes['id']??null;
+                if (is_string($id) && ($id = sanitize_html_class($id))) {
+                    $classes[] = 'aa-wrapper-id-'.$id;
+                }
+                $wrapperAttribute = [
+                    'html' => $html,
+                    'class' => $classes
+                ];
+                $wrapperAttribute['data-tag-name'] = $tag;
+                return self::createHtmlTag($wrapper, $wrapperAttribute);
+            }
+        }
+        return $html;
     }
 }

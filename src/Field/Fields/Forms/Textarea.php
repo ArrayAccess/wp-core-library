@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
@@ -20,6 +20,7 @@ class Textarea extends AbstractField implements FormFieldTypeInterface
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
+        'wrapper' => 'div',
         'rows' => 5,
     ];
 

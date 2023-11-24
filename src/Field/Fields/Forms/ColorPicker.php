@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
@@ -146,22 +146,32 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
             wp_enqueue_script('wp-color-picker');
             wp_enqueue_style('wp-color-picker');
         }
-        $options = wp_json_encode((object)$this->getColorPickerOptions())?:'{}';
         $id = $this->getId();
+        $options['change'] = <<<JSTEXT
+function(event, ui) {
+    let el = $(this);
+    el.trigger('wp-color-picker-change', [event, ui]);
+}
+JSTEXT;
+        $options = wp_json_encode((object)$this->getColorPickerOptions())?:'{}';
         wp_add_inline_script(
             'wp-color-picker',
-            <<<A
+            <<<JSTEXT
 ;(function($) {
     $( function() { 
         let el = $( "#{$id}" );
         if (el.length === 0) {
             return;
         }
+        el.bind("wp-color-picker-ready", function() {
+            $(this).closest(".wp-picker-container")
+                .addClass("aa-wp-color-picker-ready");
+        });
         let colorPicker = el.wpColorPicker({$options});
-        $.trigger("wp-color-picker-ready:$id", [el, colorPicker]);
+        el.trigger("wp-color-picker-ready", [colorPicker]);
     });
 })(window.jQuery);
-A,
+JSTEXT,
         );
         return $this;
     }

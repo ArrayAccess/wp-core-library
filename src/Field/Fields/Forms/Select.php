@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
@@ -190,8 +190,9 @@ class Select extends AbstractField implements FormFieldTypeInterface
      * @param bool $inline
      * @return string The html of the field
      */
-    public function build(bool $inline = false): string
+    public function build(?bool $inline = null): string
     {
+        $inline ??= $this->isInline();
         $html = '';
         $info = $this->getInfo();
         $containSelected = false;

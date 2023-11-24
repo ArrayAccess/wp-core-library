@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 class CodeEditor extends Textarea
 {
@@ -24,6 +24,7 @@ class CodeEditor extends Textarea
      */
     protected array $attributes = [
         'rows' => 12,
+        'wrapper' => 'div',
     ];
 
     /**

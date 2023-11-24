@@ -1,0 +1,5 @@
+// global variables
+$prefix: aa-; // prefix for arrayaccess class
+$z-index-admin-bar: 9999; // wp admin bar z-index
+$z-index-admin-menu-wrap: 9990; // wp admin menu wrap z-index
+$z-index-color-picker-holder: $z-index-admin-menu-wrap - 1;

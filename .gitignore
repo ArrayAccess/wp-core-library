@@ -94,3 +94,5 @@ package-lock.json
 
 # ignore node modules
 node_modules/
+
+/dist/

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Field\Abstracts;
 
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use ReflectionClass;
 use ReflectionObject;
@@ -79,6 +81,8 @@ abstract class AbstractField implements FieldInterface
      * @var bool Whether the asset is enqueued.
      */
     private bool $assetEnqueued = false;
+
+    private bool $inline = false;
 
     public function __construct()
     {
@@ -178,6 +182,15 @@ abstract class AbstractField implements FieldInterface
         if (in_array($attributeName, $this->disallowedAttributes, true)) {
             return $this;
         }
+        // dont set value
+        if ($attributeName === 'value'
+            && $this instanceof UnsupportedValueAttributeInterface
+        ) {
+            return $this;
+        }
+        if ($attributeName === 'name' && $this instanceof UnsupportedNameAttributeInterface) {
+            return $this;
+        }
         if ($attributeName === 'id') {
             $this->setId($value);
             return $this;
@@ -253,6 +266,12 @@ abstract class AbstractField implements FieldInterface
      */
     public function getAttributes(): array
     {
+        if ($this instanceof UnsupportedNameAttributeInterface) {
+            unset($this->attributes['name']);
+        }
+        if ($this instanceof UnsupportedValueAttributeInterface) {
+            unset($this->attributes['value']);
+        }
         $attributes = $this->attributes;
         $attributes['id'] = $this->getId();
         return $attributes;
@@ -277,6 +296,7 @@ abstract class AbstractField implements FieldInterface
         if (in_array($attributeName, $this->disallowRemoveAttributes, true)) {
             return $this;
         }
+        $attributeName = HtmlAttributes::filterAttributeName($attributeName);
         unset($this->attributes[$attributeName]);
         return $this;
     }
@@ -284,22 +304,50 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
-    public function build(bool $inline = false): string
+    public function setInline(bool $inline): static
     {
-        $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $this->getAttributes());
-        if (!$this->label) {
+        $this->inline = $inline;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isInline(): bool
+    {
+        return $this->inline;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null): string
+    {
+        $inline ??= $this->isInline();
+        $attributes = $this->getAttributes();
+        // dont set value
+        if ($this instanceof UnsupportedValueAttributeInterface) {
+            unset($attributes['value']);
+        }
+        if ($this instanceof UnsupportedNameAttributeInterface) {
+            unset($attributes['name']);
+        }
+
+        $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
+        $label = $this->getLabel();
+        if (!$label) {
             return $tag;
         }
         $html = '';
         if ($inline) {
             $html .= '<label class="aa-label aa-label-inline" for="' . $this->getId() . '">'
                 . '<span class="field-label">'
-                . $this->label
+                . $label
                 . '</span>'
                 . $tag
                 . '</label>';
         } else {
-            $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $this->label . '</label>' . $tag;
+            $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $label . '</label>' . $tag;
         }
         return $html;
     }
@@ -312,6 +360,20 @@ abstract class AbstractField implements FieldInterface
         $instance = new static();
         $instance->setAttributes($attributes);
         return $instance;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function valueIsValid(): bool
+    {
+        return $this->isValidValue(
+            $this->getAttribute('value'),
+            !HtmlAttributes::isBooleanAttributeEnabled(
+                'required',
+                $this->getAttribute('required')
+            )
+        );
     }
 
     /**

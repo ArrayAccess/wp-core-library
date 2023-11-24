@@ -113,7 +113,7 @@ interface FieldInterface extends Stringable
      * @param bool $inline Whether to inline the tag
      * @return string The html tag
      */
-    public function build(bool $inline = false) : string;
+    public function build(?bool $inline = null) : string;
 
     /**
      * Create a new instance
@@ -133,11 +133,33 @@ interface FieldInterface extends Stringable
     public function isValidValue(mixed $value = null, bool $allowNull = true): bool;
 
     /**
+     * This differs from isValidValue in that it does not check if the value is null
+     * This method checking the attribute value from the current object
+     *
+     * @return bool
+     * @use self::isValidValue()
+     */
+    public function valueIsValid() : bool;
+
+    /**
      * Filter the value
      *
      * @param mixed|null $value
      */
     public function filterValue(mixed $value = null);
+
+    /**
+     * Set the value
+     *
+     * @param bool $inline inline or not for build if null
+     * @return $this
+     */
+    public function setInline(bool $inline) : static;
+
+    /**
+     * @return bool Whether the field is inline
+     */
+    public function isInline(): bool;
 
     /**
      * Enqueue assets

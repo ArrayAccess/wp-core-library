@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 
-class SubmitButton extends AbstractField implements FormFieldTypeInterface
+class Button extends AbstractField implements FormFieldTypeInterface
 {
     /**
      * @var string The default tag name.
@@ -17,7 +17,7 @@ class SubmitButton extends AbstractField implements FormFieldTypeInterface
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
-        'type' => 'submit',
+        'type' => 'button',
     ];
 
     /**
@@ -27,7 +27,19 @@ class SubmitButton extends AbstractField implements FormFieldTypeInterface
      */
     public function setText(string $text): static
     {
-        $this->attributes['text'] = $text;
+        $this->attributes['html'] = $text;
+        return $this;
+    }
+
+    /**
+     * Set button type
+     *
+     * @param string $type
+     * @return $this
+     */
+    public function setType(string $type): static
+    {
+        $this->attributes['type'] = $type;
         return $this;
     }
 

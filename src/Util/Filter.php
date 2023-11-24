@@ -11,6 +11,7 @@ use function bccomp;
 use function bcmul;
 use function checkdnsrr;
 use function class_exists;
+use function defined;
 use function dirname;
 use function explode;
 use function filter_var;
@@ -32,6 +33,7 @@ use function min;
 use function number_format;
 use function preg_match;
 use function preg_replace;
+use function realpath;
 use function rtrim;
 use function str_pad;
 use function str_repeat;
@@ -241,6 +243,21 @@ class Filter
             return strtoupper($match[1]) . $match[2];
         }
         return str_starts_with($path, '/') ? $path : null;
+    }
+
+    /**
+     * Filter the absolute path
+     *
+     * @param string $path
+     * @return string|null
+     */
+    public static function normalizeRelativePath(string $path): ?string
+    {
+        $normalized = self::relativePath($path);
+        // replace multiple directory separator to single
+        $normalized = preg_replace('~[/\\\\]+~', DIRECTORY_SEPARATOR, $normalized);
+        // trim last directory separator
+        return rtrim($normalized, DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -1055,5 +1072,59 @@ class Filter
             }
         }
         return $args;
+    }
+
+    /**
+     * Get the path URL.
+     * Path from file / directory.
+     * Path should be on ROOT DIRECTORY or ABSPATH
+     *
+     * @param string $path FILE / DIRECTORY PATH
+     * @return ?string string if valid path
+     */
+    public static function pathURL(string $path) : ?string
+    {
+        // get a path after ABSPATH or if not defined,
+        // use DOCUMENT_ROOT or SCRIPT_FILENAME
+        $absPath = defined('ABSPATH') ? ABSPATH : (
+            $_SERVER['DOCUMENT_ROOT'] ?? dirname($_SERVER['SCRIPT_FILENAME']) ?? null
+        );
+        if (!$absPath) {
+            return null;
+        }
+        // normalize ABSPATH with realpath
+        $rootPath = rtrim(realpath($absPath), '/\\');
+        $realPath = realpath($path);
+        if (!$realPath) {
+            $realPath = self::normalizeRelativePath($path);
+        }
+        if (!$realPath || str_starts_with($realPath, $rootPath) === false) {
+            return null;
+        }
+        return str_replace('\\', '/', substr($realPath, strlen($rootPath)));
+    }
+
+    /**
+     * Get the home URL from FILE / DIRECTORY PATH
+     *
+     * @param string $path the file / directory
+     * @return ?string the home url or null if not valid path
+     */
+    public static function homeURLPath(string $path) : ?string
+    {
+        $path = self::pathURL($path);
+        return $path ? home_url($path) : null;
+    }
+
+    /**
+     * Get the site URL from FILE / DIRECTORY PATH
+     *
+     * @param string $path the file / directory
+     * @return ?string the site url or null if not valid path
+     */
+    public static function siteURLPath(string $path) : ?string
+    {
+        $path = self::pathURL($path);
+        return $path ? site_url($path) : null;
     }
 }

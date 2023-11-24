@@ -1,12 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\WP\Libraries\Core\Field\Fields;
+namespace ArrayAccess\WP\Libraries\Core\Field\Traits;
 
-use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function array_filter;
 use function explode;
@@ -15,42 +12,22 @@ use function sanitize_html_class;
 use function spl_object_hash;
 use function sprintf;
 
-/**
- * Create a multi input field
- * Build with the same name and different value.
- * Only support radio and checkbox.
- */
-class MultiInput extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
+trait MultiFieldTrait
 {
-    /**
-     * @var string The tag name.
-     */
-    protected string $tagName = 'div';
-
     /**
      * @var array<FieldInterface> The fields.
      */
     protected array $fields = [];
 
     /**
-     * @var array|string[] The default attributes.
-     */
-    protected array $attributes = [];
-
-    /**
-     * @param bool $isRadio by default, is true (radio), false for checkbox
-     */
-    public function __construct(bool $isRadio = true)
-    {
-        $this->attributes['type'] = $isRadio ? 'radio' : 'checkbox';
-        parent::__construct();
-    }
-
-    /**
      * @inheritdoc
      */
     public function addField(FieldInterface $field) : ?FieldInterface
     {
+        if ($field === $this) {
+            return null;
+        }
+
         if ($field instanceof FieldInterface
             || $field->getTagName() !== $this->tagName
         ) {
@@ -58,8 +35,8 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
         }
 
         $field = clone $field;
-        $field->setAttribute('type', $this->attributes['type']);
-        if ($field->getAttribute('type') !== $this->attributes['type']) {
+        $type = $this->getAttribute('type');
+        if ($field->getAttribute('type') !== $type) {
             return null;
         }
         $this->fields[spl_object_hash($field)] = $field;
@@ -100,49 +77,16 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
     }
 
     /**
-     * Set checked field
-     *
-     * @param FieldInterface $field
-     * @return $this
-     */
-    public function setChecked(FieldInterface $field): static
-    {
-        $id = spl_object_hash($field);
-        foreach ($this->fields as $f) {
-            if (spl_object_hash($f) === $id) {
-                $f->setAttribute('checked', true);
-            } else {
-                $f->removeAttribute('checked');
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getValue(): mixed
-    {
-        foreach ($this->fields as $field) {
-            if ($field->getAttribute('checked')) {
-                return $field->getAttribute('value');
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Create a multi input field with div|wrapper
      *
      * @param bool $inline by default is false (not inline)
      * @param string $wrapper by default is div tag
      * @return string
      */
-    public function build(bool $inline = false, string $wrapper = 'div'): string
+    public function build(?bool $inline = null, string $wrapper = 'div'): string
     {
         $html = '';
-        foreach ($this->fields as $field) {
+        foreach ($this->getFields() as $field) {
             $attr = $field->getAttributes();
             unset($attr['id']);
             $attr['name'] = $this->getName();

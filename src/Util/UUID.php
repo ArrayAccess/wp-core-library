@@ -391,7 +391,7 @@ class UUID
      * @param ?int $variant UUID variant to use UUID::UUID_VARIANT_* constants
      * @param ?int $type UUID type to use UUID::UUID_TYPE_* constants
      * @param string|null $hash
-     * @param int|null $node
+     * @param int|null $node the (maximum 48-bit) integer node (commonly mac address - hexdec($macHex))
      * @return string UUID v1, v2, v3, v4, or v5
      */
     public static function generate(
@@ -478,9 +478,9 @@ class UUID
             }
 
             // 32 bits for "time_low"
-            $timeLow = hexdec(substr($hash, 0, 8));
+            $timeLow = hexdec(substr($hash, 0, 8)) & 0xffffffff;
             // 16 bits for "time_mid"
-            $timeMid = hexdec(substr($hash, 8, 4));
+            $timeMid = hexdec(substr($hash, 8, 4)) & 0xffff;
             // 16 bits for "time_hi_and_version",
             $timeHi = hexdec(substr($hash, 12, 4)) & 0x0fff;
             // 16 bits, 8 bits for "clk_seq_hi_res",
@@ -488,7 +488,7 @@ class UUID
             // 8 bits for "clk_seq_low",
             $clockSeqLow = hexdec(substr($hash, 18, 2)) & 0xff;
             // 48 bits for "node"
-            $node = hexdec(substr($hash, 20, 12));
+            $node = ($node??hexdec(substr($hash, 20, 12))) & 0xffffffffffff;
         } else {
             if ($type === self::UUID_TYPE_TIME) {
                 // 60-bits timestamp

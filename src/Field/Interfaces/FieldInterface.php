@@ -11,7 +11,7 @@ interface FieldInterface extends Stringable
      * FieldInterface constructor.
      * Empty constructor
      */
-    public function __construct();
+    public function __construct(?string $name = null);
 
     /**
      * Get the name of the tag
@@ -124,6 +124,11 @@ interface FieldInterface extends Stringable
     public static function create(array $attributes = []) : static;
 
     /**
+     * @return bool Whether the field is required
+     */
+    public function isRequired(): bool;
+
+    /**
      * Validate the value
      *
      * @param mixed $value if no argument specified, use current set value
@@ -136,10 +141,10 @@ interface FieldInterface extends Stringable
      * This differs from isValidValue in that it does not check if the value is null
      * This method checking the attribute value from the current object
      *
-     * @return bool
+     * @return bool|FieldInterface true if valid, FieldInterface if not valid
      * @use self::isValidValue()
      */
-    public function valueIsValid() : bool;
+    public function valueIsValid() : bool|FieldInterface;
 
     /**
      * Filter the value
@@ -155,6 +160,21 @@ interface FieldInterface extends Stringable
      * @return $this
      */
     public function setInline(bool $inline) : static;
+
+    /**
+     * Set description, commonly used for help text
+     *
+     * @param ?string $description
+     * @return $this
+     */
+    public function setDescription(?string $description): static;
+
+    /**
+     * Get the description
+     *
+     * @return ?string
+     */
+    public function getDescription(): ?string;
 
     /**
      * @return bool Whether the field is inline

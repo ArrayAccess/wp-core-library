@@ -101,8 +101,12 @@ class CodeEditor extends Textarea
             sprintf(
                 '
                 (function($) {
-                    $( function() { 
-                        wp.codeEditor.initialize( "%s", %s );
+                    $( function() {
+                        let id = $("textarea#%1$s");
+                        if ( ! id.length ) {
+                            return;
+                        }
+                        wp.codeEditor.initialize( id, %2$s );
                     });
                 })(window.jQuery);',
                 $this->getId(),

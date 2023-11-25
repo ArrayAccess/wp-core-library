@@ -14,6 +14,13 @@ class Button extends AbstractField implements FormFieldTypeInterface
     protected string $tagName = 'button';
 
     /**
+     * @var array|string[] The default class names.
+     */
+    protected array $defaultClass = [
+        'button'
+    ];
+
+    /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [

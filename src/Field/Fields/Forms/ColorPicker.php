@@ -15,6 +15,7 @@ use function wp_add_inline_script;
 use function wp_enqueue_script;
 use function wp_json_encode;
 use function wp_script_is;
+use function wp_style_is;
 
 class ColorPicker extends AbstractField implements FormFieldTypeInterface
 {
@@ -82,6 +83,9 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         if (!parent::isValidValue($value, $allowNull)) {
             return false;
         }
+        if ($value === null && $allowNull) {
+            return true;
+        }
         $required = $this->getAttribute('required');
         if (HtmlAttributes::isBooleanAttributeEnabled('required', $required) && empty($value)) {
             return false;
@@ -144,6 +148,8 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
     {
         if (!wp_script_is('wp-color-picker')) {
             wp_enqueue_script('wp-color-picker');
+        }
+        if (!wp_style_is('wp-color-picker')) {
             wp_enqueue_style('wp-color-picker');
         }
         $id = $this->getId();

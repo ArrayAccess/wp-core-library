@@ -6,11 +6,14 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Sections;
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Hidden;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldValuesInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Traits\AppendedValuesTrait;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+use function force_balance_tags;
 use function is_string;
 use function spl_object_hash;
 use function strtolower;
@@ -21,9 +24,11 @@ use function strtolower;
 class Form extends AbstractField implements
     MultipleFieldInterface,
     UnsupportedValueAttributeInterface,
-    UnsupportedNameAttributeInterface
+    UnsupportedNameAttributeInterface,
+    FieldValuesInterface
 {
-    use MultiFieldTrait;
+    use MultiFieldTrait,
+        AppendedValuesTrait;
 
     public const ENC_TYPE_APPLICATION_X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';
     public const ENC_TYPE_MULTIPART_FORM_DATA = 'multipart/form-data';
@@ -50,18 +55,9 @@ class Form extends AbstractField implements
     protected array $disallowedAttributes = [
         'type',
         'value',
-        'label'
+        'label',
+        'name', // form is not input type
     ];
-
-    /**
-     * Form is not input type
-     *
-     * @return mixed
-     */
-    public function getValue(): mixed
-    {
-        return null;
-    }
 
     /**
      * @inheritdoc
@@ -69,6 +65,14 @@ class Form extends AbstractField implements
     public function setLabel(?string $label): static
     {
         return $this;
+    }
+
+    /**
+     * @return bool form is inline
+     */
+    public function isInline(): bool
+    {
+        return true;
     }
 
     /**
@@ -89,10 +93,12 @@ class Form extends AbstractField implements
 
     /**
      * @inheritdoc
+     * @noinspection PhpNonStrictObjectEqualityInspection
      */
     public function addField(FieldInterface $field): ?FieldInterface
     {
         // disallow to add self or form field
+        // phpcs::ignore SlevomatCodingStandard.Operators.DisallowEqualOperators
         if ($field === $this || $field->getTagName() === 'form') {
             return null;
         }
@@ -190,26 +196,18 @@ class Form extends AbstractField implements
     }
 
     /**
-     * Enqueue assets
-     *
-     * @return $this
-     */
-    protected function doEnqueueAssets(): static
-    {
-        foreach ($this->getFields() as $field) {
-            $field->enqueueAssets();
-        }
-        return $this;
-    }
-
-    /**
      * @inheritdoc
+     * @noinspection PhpNonStrictObjectEqualityInspection
      */
     public function build(?bool $inline = null): string
     {
         $html = '';
         $increment = 0;
         foreach ($this->getFields() as $field) {
+            // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators
+            if ($field == $this) {
+                continue;
+            }
             $field = clone $field;
             ++$increment;
             $field->setAttribute('data-form-increment-id', $increment);
@@ -225,7 +223,16 @@ class Form extends AbstractField implements
             $html .= $field->build();
             $html .= '</div>';
         }
+
         $attributes = $this->getAttributes();
+        $description = $this->getDescription();
+        // description for form as form text / html
+        if ($description !== null) {
+            $html = sprintf(
+                '<div class="aa-field-description aa-form-description">%s</div>',
+                str_contains($description, '<') ? force_balance_tags($description) : esc_html($description)
+            ) . $html;
+        }
         $attributes['html'] = $html;
 
         return HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);

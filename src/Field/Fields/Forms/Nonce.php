@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
+use ArrayAccess\WP\Libraries\Core\Service\Services;
+use function function_exists;
 use function is_string;
 
 class Nonce extends Hidden
@@ -69,6 +71,10 @@ class Nonce extends Hidden
     public function getNonce(): string
     {
         if ($this->nonce === null) {
+            if (!function_exists('wp_create_nonce')) {
+                // load pluggable file
+                Services::loadPluggableFile();
+            }
             $this->nonce = wp_create_nonce($this->getNonceName());
         }
         return $this->nonce;
@@ -94,7 +100,13 @@ class Nonce extends Hidden
         if (!is_string($value)) {
             return false;
         }
+
+        if (function_exists('wp_verify_nonce')) {
+            // load pluggable file
+            Services::loadPluggableFile();
+        }
+
         // validate nonce
-        return wp_verify_nonce($value, $this->getNonceName());
+        return wp_verify_nonce($value, $this->getNonceName()) !== false;
     }
 }

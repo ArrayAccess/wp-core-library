@@ -7,7 +7,9 @@ use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function esc_html;
+use function force_balance_tags;
 use function func_num_args;
+use function wp_kses_post;
 
 /**
  * Single Select field
@@ -55,9 +57,9 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * @param string|null $selected The selected value, if null, the first option will be selected
      */
-    public function __construct(?string $selected = null)
+    public function __construct(?string $name = null, ?string $selected = null)
     {
-        parent::__construct();
+        parent::__construct($name);
         $this->setSelected($selected);
     }
 
@@ -223,17 +225,27 @@ class Select extends AbstractField implements FormFieldTypeInterface
         $attr = $this->getAttributes();
         $attr['html'] = $html;
         $html = HtmlAttributes::createHtmlTag($this->getTagName(), $attr);
-        if (!$this->label) {
-            return $html;
-        }
-        return $inline ? '<label class="aa-label aa-label-inline" for="'
+        $label = $this->getLabel();
+        if ($label) {
+            $label = str_contains($label, '<') ? force_balance_tags($label) : esc_html($label);
+            $html = $inline ? '<label class="aa-label aa-label-inline" for="'
                 . $this->getId() . '">'
                 . '<span class="field-label">'
-                . $this->label
+                . $label
                 . '</span>'
                 . $html
                 . '</label>' : '<label class="aa-label" for="'
-                . $this->getId() . '">' . $this->label . '</label>' . $html;
+                . $this->getId() . '">' . $label . '</label>' . $html;
+        }
+        $description = $this->getDescription();
+        if ($description !== null) {
+            // check if contain html tag > use force_balance_tag
+            if (str_contains($description, '<')) {
+                $description = wp_kses_post($description);
+            }
+            $html .= '<span class="aa-field-description aa-select-description">' . $description . '</span>';
+        }
+        return $html;
     }
 
     /**

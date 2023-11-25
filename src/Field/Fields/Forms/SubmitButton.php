@@ -14,9 +14,9 @@ class SubmitButton extends Button
         'wrapper' => 'p'
     ];
 
-    public function __construct()
+    public function __construct(?string $name = null)
     {
-        parent::__construct();
+        parent::__construct($name);
         $this->setText(__('Submit', 'arrayaccess'));
     }
 

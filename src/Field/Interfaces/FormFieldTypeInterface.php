@@ -15,7 +15,7 @@ interface FormFieldTypeInterface
     /**
      * Get form input value
      *
-     * @return mixed value of the input
+     * @return mixed|scalar value of the input
      */
     public function getValue() : mixed;
 }

@@ -337,6 +337,86 @@ class HtmlAttributes
     }
 
     /**
+     * @param mixed $name
+     * @param mixed $value
+     * @param bool $allowHtmlName
+     * @return ?array{key: string, value: string}
+     */
+    public static function convertAttributeValue(
+        mixed $name,
+        mixed $value,
+        bool $allowHtmlName = false
+    ) : ?array {
+        if (!is_string($name) || ($name = trim($name)) === '') {
+            return null;
+        }
+        $lowerKey = strtolower($name);
+        // attribute key does not allow whitespace
+        // skip!
+        if (preg_match('~\s~i', $name)) {
+            return null;
+        }
+        if ($lowerKey === 'html' && $allowHtmlName === false) {
+            return null;
+        }
+        // if boolean attribute & empty string, value is true
+        if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
+            if (self::isBooleanAttributeEnabled($lowerKey, $value)) {
+                $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
+            } else {
+                return [
+                    'key' => self::HTML_ATTRIBUTES[$lowerKey]??$name,
+                    'value' => false
+                ];
+            }
+        } elseif (is_bool($value)) {
+            if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
+                // skip if false, empty string is true
+                if (!$value) {
+                    return [
+                        'key' => self::HTML_ATTRIBUTES[$lowerKey]??$name,
+                        'value' => false
+                    ];
+                }
+                $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
+            } else {
+                $value = $value ? 'true' : 'false';
+            }
+        } elseif ($value instanceof Stringable || is_scalar($value)) {
+            // if it was a float & more than PHP_INT_MAX commonly contain E,
+            // convert with bc function
+            if (is_float($value) && $value > PHP_INT_MAX) {
+                $value = '';
+            }
+            $value = (string) $value;
+        } /** @noinspection PhpConditionAlreadyCheckedInspection */ elseif ($value instanceof JsonSerializable) {
+            $value = json_encode($value, JSON_UNESCAPED_SLASHES);
+        } elseif ($value === null || $value === INF) {
+            // null is true
+            $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey] ?? '';
+        }
+        if ($lowerKey === 'class') {
+            $values = [];
+            $value = is_string($value)
+                ? explode(' ', $value)
+                : (is_iterable($value) ? $value : []);
+            foreach ($value as $val) {
+                if (!is_string($val)) {
+                    continue;
+                }
+                $values[] = sanitize_html_class($val);
+            }
+            $values = array_filter($values);
+            $value = implode(' ', $values);
+        }
+        return is_string($value)
+            ? [
+                'key' => self::HTML_ATTRIBUTES[$lowerKey]??$name,
+                'value' => $value
+            ] : null;
+    }
+
+    /**
      * Returning build attribute lists
      *
      * @param array $attributes
@@ -346,78 +426,23 @@ class HtmlAttributes
     {
         $attr = [];
         foreach ($attributes as $key => $value) {
-            if (!is_string($key) || ($key = trim($key)) === '') {
+            $attrs = self::convertAttributeValue($key, $value);
+            if (!$attrs) {
                 continue;
             }
-            // trim
-            $key = trim($key);
-            // attribute key does not allow whitespace
-            // skip!
-            if (preg_match('~\s~i', $key)) {
+            $key = $attrs['key'];
+            $value = $attrs['value'];
+            if ($value === false) {
                 continue;
             }
-            $lowerKey = strtolower($key);
-            // skip html
-            if ($lowerKey === 'html') {
-                continue;
-            }
-            // if boolean attribute & empty string, value is true
-            if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
-                if (self::isBooleanAttributeEnabled($lowerKey, $value)) {
-                    $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
-                } else {
-                    continue;
-                }
-            } elseif (is_bool($value)) {
-                if (isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey])) {
-                    // skip if false, empty string is true
-                    if (!$value) {
-                        continue;
-                    }
-                    $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
-                } else {
-                    $value = $value ? 'true' : 'false';
-                }
-            } elseif ($value instanceof Stringable || is_scalar($value)) {
-                // if it was a float & more than PHP_INT_MAX commonly contain E,
-                // convert with bc function
-                if (is_float($value) && $value > PHP_INT_MAX) {
-                    $value = '';
-                }
-                $value = (string) $value;
-            } /** @noinspection PhpConditionAlreadyCheckedInspection */ elseif ($value instanceof JsonSerializable) {
-                $value = json_encode($value, JSON_UNESCAPED_SLASHES);
-            } elseif ($value === null || $value === INF) {
-                // null is true
-                $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey] ?? '';
-            }
-            if ($lowerKey === 'class') {
-                $values = [];
-                $value = is_string($value)
-                    ? explode(' ', $value)
-                    : (is_iterable($value) ? $value : []);
-                foreach ($value as $val) {
-                    if (!is_string($val)) {
-                        continue;
-                    }
-                    $values[] = sanitize_html_class($val);
-                }
-                $values = array_filter($values);
-                $value = implode(' ', $values);
-            }
-
-            if (!is_string($value)) {
-                continue;
-            }
-
             // filter!
-            if (isset(self::ATTRIBUTES_NUMERIC_TYPES[$lowerKey])) {
+            if (isset(self::ATTRIBUTES_NUMERIC_TYPES[$key])) {
                 $value = is_numeric($value) ? $value : '';
-            } elseif (isset(self::ATTRIBUTES_INTEGER_TYPES[$lowerKey])) {
+            } elseif (isset(self::ATTRIBUTES_INTEGER_TYPES[$key])) {
                 $value = is_numeric($value) ? (string) intval($value) : '';
             }
 
-            $key = self::HTML_ATTRIBUTES[$lowerKey]??$key;
+            $key = self::HTML_ATTRIBUTES[$key]??$key;
             if ($value === '') {
                 if (in_array($key, self::NO_ATTRIBUTES)) {
                     continue;

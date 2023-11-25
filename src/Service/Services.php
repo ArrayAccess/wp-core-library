@@ -12,6 +12,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Rest;
 use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
+use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ReflectionClass;
 use Throwable;
@@ -57,6 +58,11 @@ final class Services implements ServicesInterface
      * @var bool true if plugin file is loaded
      */
     private static bool $pluginFileLoaded = false;
+
+    /**
+     * @var bool true if pluggable file is loaded
+     */
+    private static bool $pluggableFileLoaded = false;
 
     /**
      * Default services list.
@@ -284,6 +290,23 @@ final class Services implements ServicesInterface
         if (self::$pluginFileLoaded) {
             return;
         }
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        self::$pluginFileLoaded = true;
+        Consolidator::requireNull(
+            ABSPATH . 'wp-admin/includes/plugin.php'
+        );
+    }
+
+    /**
+     * @return void load pluggable.php file
+     */
+    final public static function loadPluggableFile(): void
+    {
+        if (self::$pluggableFileLoaded) {
+            return;
+        }
+        self::$pluggableFileLoaded = true;
+        Consolidator::requireNull(
+            ABSPATH . WPINC . '/pluggable.php'
+        );
     }
 }

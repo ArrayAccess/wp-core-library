@@ -16,6 +16,7 @@ use function array_map;
 use function did_action;
 use function doing_action;
 use function explode;
+use function force_balance_tags;
 use function in_array;
 use function is_array;
 use function is_iterable;
@@ -40,6 +41,11 @@ abstract class AbstractField implements FieldInterface
      * @var ?string The label.
      */
     protected ?string $label = null;
+
+    /**
+     * @var ?string The description.
+     */
+    protected ?string $description = null;
 
     /**
      * @var string The id.
@@ -84,7 +90,7 @@ abstract class AbstractField implements FieldInterface
 
     private bool $inline = false;
 
-    public function __construct()
+    public function __construct(?string $name = null)
     {
         $this->tagName ??= strtolower((new ReflectionClass($this))->getShortName());
         $tagName = $this->getTagName();
@@ -93,6 +99,9 @@ abstract class AbstractField implements FieldInterface
         $this->attributes['class'] ??= $this->defaultClass;
         $this->setAttribute('data-field-type', $tagName);
         $this->setAttribute('class', $this->attributes['class']);
+        if ($name !== null) {
+            $this->setName($name);
+        }
     }
 
     /**
@@ -321,6 +330,23 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function build(?bool $inline = null): string
     {
         $inline ??= $this->isInline();
@@ -335,19 +361,28 @@ abstract class AbstractField implements FieldInterface
 
         $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
         $label = $this->getLabel();
-        if (!$label) {
-            return $tag;
+        $html = $tag;
+        if ($label) {
+            $html = '';
+            $label = force_balance_tags($label);
+            if ($inline) {
+                $html .= '<label class="aa-label aa-label-inline" for="' . $this->getId() . '">'
+                    . '<span class="field-label">'
+                    . $label
+                    . '</span>'
+                    . $tag
+                    . '</label>';
+            } else {
+                $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $label . '</label>' . $tag;
+            }
         }
-        $html = '';
-        if ($inline) {
-            $html .= '<label class="aa-label aa-label-inline" for="' . $this->getId() . '">'
-                . '<span class="field-label">'
-                . $label
-                . '</span>'
-                . $tag
-                . '</label>';
-        } else {
-            $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $label . '</label>' . $tag;
+        $description = $this->getDescription();
+        if ($description !== null) {
+            // check if contain html tag > use force_balance_tag
+            if (str_contains($description, '<')) {
+                $description = wp_kses_post($description);
+            }
+            $html .= '<span class="aa-field-description">' . $description . '</span>';
         }
         return $html;
     }
@@ -361,19 +396,24 @@ abstract class AbstractField implements FieldInterface
         $instance->setAttributes($attributes);
         return $instance;
     }
+    public function isRequired(): bool
+    {
+        return !HtmlAttributes::isBooleanAttributeEnabled(
+            'required',
+            $this->getAttribute('required')
+        );
+    }
 
     /**
      * @inheritdoc
      */
-    public function valueIsValid(): bool
+    public function valueIsValid(): bool|FieldInterface
     {
-        return $this->isValidValue(
+        $value = $this->isValidValue(
             $this->getAttribute('value'),
-            !HtmlAttributes::isBooleanAttributeEnabled(
-                'required',
-                $this->getAttribute('required')
-            )
+            $this->isRequired()
         );
+        return $value ? true : $this;
     }
 
     /**

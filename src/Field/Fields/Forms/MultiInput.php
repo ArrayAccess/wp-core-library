@@ -27,10 +27,10 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
     /**
      * @param bool $isRadio by default, is true (radio), false for checkbox
      */
-    public function __construct(bool $isRadio = true)
+    public function __construct(?string $name = null, bool $isRadio = true)
     {
         $this->attributes['type'] = $isRadio ? 'radio' : 'checkbox';
-        parent::__construct();
+        parent::__construct($name);
     }
 
     /**

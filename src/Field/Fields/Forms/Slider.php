@@ -76,6 +76,9 @@ class Slider extends AbstractField implements FormFieldTypeInterface
         if (!parent::isValidValue($value, $allowNull)) {
             return false;
         }
+        if ($value === null && $allowNull) {
+            return true;
+        }
         if (!is_numeric($value)) {
             return false;
         }

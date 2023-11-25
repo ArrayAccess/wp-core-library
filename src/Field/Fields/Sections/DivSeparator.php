@@ -27,13 +27,49 @@ class DivSeparator extends AbstractField implements
     protected array $attributes = [];
 
     /**
-     * @var array|string[] The disallowing remove attributes.
+     * @var array|string[] The disallowed attributes.
      */
     protected array $disallowedAttributes = [
         'type',
         'name',
         'value',
     ];
+
+    public function valueIsValid(): bool
+    {
+        return true;
+    }
+
+    public function isValidValue(mixed $value = null, bool $allowNull = true): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return bool separator is inline
+     */
+    public function isInline(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Separator does not support description
+     * @inheritdoc
+     */
+    public function setDescription(?string $description): static
+    {
+        return $this;
+    }
+
+    /**
+     * Separator does not support description
+     * @inheritdoc
+     */
+    public function getDescription(): ?string
+    {
+        return null;
+    }
 
     /**
      * @param bool $inline

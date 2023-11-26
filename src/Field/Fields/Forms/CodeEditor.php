@@ -3,6 +3,18 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
+use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
+use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
+use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+use function dirname;
+use function force_balance_tags;
+use function sprintf;
+use function wp_kses_post;
+use function wp_script_is;
+use function wp_style_is;
+
 class CodeEditor extends Textarea
 {
     /**
@@ -25,64 +37,94 @@ class CodeEditor extends Textarea
     protected array $attributes = [
         'rows' => 12,
         'wrapper' => 'div',
+        'data-code-editor' => 'codejar'
     ];
 
     /**
-     * This for use wp_enqueue_code_editor() function
-     *
-     * @var array code editor options
-     * @see wp_get_code_editor_settings()
-     * @see wp_enqueue_code_editor()
-     * @link https://developer.wordpress.org/reference/functions/wp_enqueue_code_editor/
+     * @var array|string[] The disallowing remove attributes.
      */
-    private array $codeEditorOptions = [
-        'codemirror' => [
-            'indentWithTabs' => false,
-        ]
+    protected array $disallowRemoveAttributes = [
+        'data-code-editor',
+        'data-code-editor-mode',
+        'data-code-editor-theme',
     ];
 
     /**
-     * Set code editor options
-     *
-     * @param array $options
+     * @var string The code mirror theme path.
+     */
+    private string $distDirectory;
+
+    /**
+     * @var string The code editor type.
+     */
+    private string $theme = HighlightJS::DEFAULT_THEME;
+
+    /**
+     * @var string The code editor type.
+     */
+    private string $language = 'plaintext';
+
+    /**
+     * @param ?string $name
+     */
+    final public function __construct(?string $name = null)
+    {
+        parent::__construct($name);
+        $this->distDirectory = dirname(__DIR__, 4) . '/dist';
+        $this->doConstruct();
+    }
+
+    /**
+     * @return string The code mirror theme path.
+     */
+    public function getDistDirectory(): string
+    {
+        return $this->distDirectory;
+    }
+
+    /**
+     * Do something after construct.
+     */
+    protected function doConstruct()
+    {
+        // pass
+    }
+
+    /**
+     * @param string $theme
+     * @param null $found
      * @return $this
      */
-    public function setCodeEditorOptions(array $options): static
+    public function setTheme(string $theme, &$found = null): static
     {
-        $this->codeEditorOptions = $options;
+        $theme = HighlightJS::filterTheme($theme, $found);
+        if ($found) {
+            $this->theme = $theme;
+        }
+        return $this;
+    }
+
+    public function getTheme(): string
+    {
+        return $this->theme;
+    }
+
+    public function setLanguage(string $language, &$found = null): static
+    {
+        $language = HighlightJS::filterLanguage($language, $found);
+        if (!$found) {
+            return $this;
+        }
+        $this->language = $language;
         return $this;
     }
 
     /**
-     * @return array
+     * @return ?string The code editor mode.
      */
-    public function getCodeEditorOptions(): array
+    public function getLanguage(): ?string
     {
-        return $this->codeEditorOptions;
-    }
-
-    /**
-     * Set code editor type
-     *
-     * @param string $type The type of code editor to use.
-     * @return $this
-     */
-    public function setCodeEditorType(string $type): static
-    {
-        $this->codeEditorOptions['type'] = $type;
-        return $this;
-    }
-
-    /**
-     * Set code editor code mirror options
-     *
-     * @param array $options
-     * @return $this
-     */
-    public function setCodeEditorCodeMirrorOptions(array $options): static
-    {
-        $this->codeEditorOptions['codemirror'] = $options;
-        return $this;
+        return $this->language;
     }
 
     /**
@@ -90,29 +132,58 @@ class CodeEditor extends Textarea
      */
     protected function doEnqueueAssets(): static
     {
-        // enqueue code editor
-        $settings = wp_enqueue_code_editor($this->codeEditorOptions);
-        if ($settings === false) {
-            return $this;
+        if (!wp_script_is('arrayaccess-editor')
+            || !wp_style_is('arrayaccess-common')
+            || !wp_style_is('arrayaccess-highlightjs')
+        ) {
+            $defaultAssets = DefaultAssets::getInstance();
+            $defaultAssets->init();
+            $defaultAssets->enqueueAsset('arrayaccess-highlightjs', 'css');
+            $defaultAssets->enqueueAsset('arrayaccess-editor');
         }
 
-        wp_add_inline_script(
-            'code-editor',
-            sprintf(
-                '
-                (function($) {
-                    $( function() {
-                        let id = $("textarea#%1$s");
-                        if ( ! id.length ) {
-                            return;
-                        }
-                        wp.codeEditor.initialize( id, %2$s );
-                    });
-                })(window.jQuery);',
-                $this->getId(),
-                wp_json_encode($settings)??'{}'
-            )
-        );
         return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null): string
+    {
+        $inline ??= $this->isInline();
+        $attributes = $this->getAttributes();
+        // dont set value
+        if ($this instanceof UnsupportedValueAttributeInterface) {
+            unset($attributes['value']);
+        }
+        if ($this instanceof UnsupportedNameAttributeInterface) {
+            unset($attributes['name']);
+        }
+
+        $theme = $this->getTheme();
+        $language = $this->getLanguage();
+        $attributes['class'] ??= [];
+        $attributes['class'][] = 'aa-code-editor';
+        $attributes['class'][] = sprintf('aa-code-editor-%s', $theme);
+        $attributes['data-code-editor-theme'] = $theme;
+        $attributes['data-code-editor-language'] = $language;
+        /** @noinspection DuplicatedCode */
+        $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
+        $label = $this->getLabel();
+        $html = $tag;
+        if ($label) {
+            $html = '';
+            $label = force_balance_tags($label);
+            $html .= '<label class="aa-label" for="' . $this->getId() . '">' . $label . '</label>' . $tag;
+        }
+        $description = $this->getDescription();
+        if ($description !== null) {
+            // check if contain html tag > use force_balance_tag
+            if (str_contains($description, '<')) {
+                $description = wp_kses_post($description);
+            }
+            $html .= '<span class="aa-field-description">' . $description . '</span>';
+        }
+        return $html;
     }
 }

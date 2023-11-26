@@ -13,7 +13,10 @@ The contributions are not limited to code only; you can also contribute to the d
 - Run `composer phpcs` to check the coding standard.
 - Run `composer phpunit` to run the tests.
 - Run `composer phpcbf` to fix the coding standard automatically.
-
+- Install Node.js and NPM.
+- Run `npm install` to install the dependencies.
+- Run `npm build-watch` to build the assets automatically, watch the changes of assets js & css.
+- Run `npm watch` to watch the changes of assets js & css.
 
 ## Pull Requests
 

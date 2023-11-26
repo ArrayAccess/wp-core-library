@@ -25,14 +25,25 @@
         "test": "tests"
     },
     "scripts": {
-        "compile-css": "sass --no-source-map --style=compressed --watch assets/scss:assets/css",
-        "compile-prod": "npm-run-all compile-css",
+        "watch": "grunt --gruntfile Gruntfile.js copy watch",
+        "build-watch": "grunt --gruntfile Gruntfile.js copy concat cssmin sass uglify watch",
+        "build": "grunt --gruntfile Gruntfile.js",
         "eslint": "eslint assets/js/*.js"
     },
     "devDependencies": {
+        "@highlightjs/cdn-assets": "^11.9.0",
+        "codejar": "^4.2.0",
+        "codejar-linenumbers": "^1.0.1",
         "copyfiles": "^2.4.1",
         "eslint": "^8.54.0",
-        "npm-run-all": "^4.1.5",
+        "grunt": "^1.6.1",
+        "grunt-cli": "^1.4.3",
+        "grunt-contrib-concat": "^2.1.0",
+        "grunt-contrib-copy": "^1.0.0",
+        "grunt-contrib-cssmin": "^5.0.0",
+        "grunt-contrib-sass": "^2.0.0",
+        "grunt-contrib-uglify": "^5.2.2",
+        "grunt-contrib-watch": "^1.1.0",
         "sass": "^1.69.5",
         "stylelint": "^15.11.0"
     }

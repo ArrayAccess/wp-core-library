@@ -88,7 +88,15 @@ abstract class AbstractField implements FieldInterface
      */
     private bool $assetEnqueued = false;
 
+    /**
+     * @var bool
+     */
     private bool $inline = false;
+
+    /**
+     * @var int The increment.
+     */
+    private int $increment;
 
     public function __construct(?string $name = null)
     {
@@ -130,8 +138,12 @@ abstract class AbstractField implements FieldInterface
     {
         if ($this->id === '') {
             self::$incrementId[$this->tagName] ??= 0;
+            $this->increment ??= self::$incrementId[$this->tagName]++;
             $this->id = sanitize_html_class(
-                strtolower($this->tagName) . '-' . self::$incrementId[$this->tagName]++
+                'aa-field-'
+                . strtolower($this->tagName)
+                . '-'
+                . $this->increment
             );
         }
         return $this->id;
@@ -469,6 +481,9 @@ abstract class AbstractField implements FieldInterface
             $isPrivate = $property->isPrivate();
             if ($isPrivate) {
                 $property->setAccessible(true);
+            }
+            if (!$property->isInitialized($this)) {
+                continue;
             }
             $value = $property->getValue($this);
             $key = $property->getName();

@@ -1,0 +1,22 @@
+/* CodeJar line numbers */
+.codejar-linenumber {
+    &s-inner-wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        overflow: hidden;
+    }
+
+    &s {
+        mix-blend-mode: initial;
+        height: 100%;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    & {
+        position: relative;
+        top: 0;
+    }
+}

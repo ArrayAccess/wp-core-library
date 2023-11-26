@@ -11,7 +11,6 @@ use function is_string;
 use function preg_match;
 use function preg_replace;
 use function str_starts_with;
-use function wp_add_inline_script;
 use function wp_enqueue_script;
 use function wp_json_encode;
 use function wp_script_is;
@@ -53,6 +52,7 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
      */
     protected array $disallowRemoveAttributes = [
         'data-color-picker',
+        'data-color-picker-options',
     ];
 
     /**
@@ -140,6 +140,12 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         }
         return $value;
     }
+    public function getAttributes(): array
+    {
+        $attributes = parent::getAttributes();
+        $attributes['data-color-picker-options'] = wp_json_encode((object)$this->getColorPickerOptions())?:'{}';
+        return $attributes;
+    }
 
     /**
      * @inheritdoc
@@ -152,33 +158,6 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         if (!wp_style_is('wp-color-picker')) {
             wp_enqueue_style('wp-color-picker');
         }
-        $id = $this->getId();
-        $options['change'] = <<<JSTEXT
-function(event, ui) {
-    let el = $(this);
-    el.trigger('wp-color-picker-change', [event, ui]);
-}
-JSTEXT;
-        $options = wp_json_encode((object)$this->getColorPickerOptions())?:'{}';
-        wp_add_inline_script(
-            'wp-color-picker',
-            <<<JSTEXT
-;(function($) {
-    $( function() { 
-        let el = $( "#{$id}" );
-        if (el.length === 0) {
-            return;
-        }
-        el.bind("wp-color-picker-ready", function() {
-            $(this).closest(".wp-picker-container")
-                .addClass("aa-wp-color-picker-ready");
-        });
-        let colorPicker = el.wpColorPicker({$options});
-        el.trigger("wp-color-picker-ready", [colorPicker]);
-    });
-})(window.jQuery);
-JSTEXT,
-        );
         return $this;
     }
 }

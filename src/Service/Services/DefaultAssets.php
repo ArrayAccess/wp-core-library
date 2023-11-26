@@ -4,28 +4,35 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
+use ArrayAccess\WP\Libraries\Core\Service\Services;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
+use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
 use function add_action;
 use function did_action;
 use function dirname;
+use function doing_action;
 use function is_array;
 use function is_string;
 use function remove_action;
 use function site_url;
+use function str_ends_with;
 use function str_starts_with;
 use function strtolower;
+use function substr;
 use function trim;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_register_script;
 use function wp_register_style;
+use function wp_script_add_data;
 use function wp_script_is;
+use function wp_scripts;
 use function wp_style_is;
 
 /**
  * Service that help to register default assets.
  */
-class DefaultAssets extends AbstractService
+final class DefaultAssets extends AbstractService
 {
     protected string $serviceName = 'defaultAssets';
 
@@ -47,27 +54,69 @@ class DefaultAssets extends AbstractService
     protected array $registeredAssetsHandle = [];
 
     /**
+     * @var ?DefaultAssets The instance.
+     */
+    private static ?DefaultAssets $instance = null;
+
+    /**
      * Default assets.
      */
     public const ASSETS = [
         'css' => [
-            'arrayaccess-admin-css' => [
-                'src' => '/css/admin.css',
+            'arrayaccess-common' => [
+                'src' => '/css/common.min.css',
                 'deps' => [],
                 'ver' => '1.0.0',
                 'media' => 'all',
             ],
+            'arrayaccess-admin' => [
+                'src' => '/css/admin.min.css',
+                'deps' => [
+                    'arrayaccess-common'
+                ],
+                'ver' => '1.0.0',
+                'media' => 'all',
+            ],
+            'arrayaccess-highlightjs' => [
+                'src' => '/highlightjs/highlight.bundle.min.css',
+                'deps' => [
+                    'arrayaccess-common'
+                ],
+                'ver' => HighlightJS::VERSION,
+                'media' => 'all',
+            ],
         ],
         'js' => [
-            'arrayaccess-admin-js' => [
-                'src' => '/js/admin.js',
+            'arrayaccess-common' => [
+                'src' => '/js/common.min.js',
                 'deps' => [
                     'jquery',
+                ],
+                'ver' => '1.0.0',
+                'in_footer' => true,
+            ],
+            'arrayaccess-admin' => [
+                'src' => '/js/admin.min.js',
+                'deps' => [
+                    'arrayaccess-common',
                     'wp-util',
                 ],
                 'ver' => '1.0.0',
                 'in_footer' => true,
             ],
+            'arrayaccess-highlightjs' => [
+                'src' => '/highlightjs/highlight.bundle.js',
+                'deps' => [],
+                'ver' => HighlightJS::VERSION,
+                'in_footer' => true,
+            ],
+            'arrayaccess-editor' => [
+                'src' => '/js/editor.bundle.min.js',
+                'deps' => [],
+                'ver' => '1.0.0',
+                'in_footer' => false,
+                // 'type' => 'module'
+            ]
         ],
     ];
 
@@ -85,10 +134,18 @@ class DefaultAssets extends AbstractService
             'Service that help to register default assets.',
             'arrayaccess'
         );
-
+        self::$instance = $this;
         $this->distPath = Filter::pathURL(
             dirname(__DIR__, 3) . '/dist'
         );
+    }
+
+    /**
+     * @return DefaultAssets The instance.
+     */
+    public static function getInstance(): DefaultAssets
+    {
+        return self::$instance ??= new self(new Services());
     }
 
     /**
@@ -101,9 +158,35 @@ class DefaultAssets extends AbstractService
         if ($this->init) {
             return;
         }
+        add_action('wp_script_attributes', function ($attrs) {
+            if (!is_string($attrs['id']??null)
+                || !str_ends_with($attrs['id'], '-js')
+            ) {
+                return $attrs;
+            }
+            $id = substr($attrs['id'], 0, -3);
+            if (!isset($this->registeredAssetsHandle['js'][$id])) {
+                return $attrs;
+            }
+            $script = wp_scripts()->get_data($id, 'type');
+            if ($script !== 'module') {
+                return $attrs;
+            }
+            $attrs['type'] = 'module';
+            return $attrs;
+        });
         $this->init = true;
         $this->registerDefaultAssets();
-        $this->registerAdminAssets();
+        if (did_action('init')
+            || doing_action('init')
+        ) {
+            $this->registerAdminAssets();
+        } else {
+            $callback = function () use (&$callback) {
+                $this->registerAdminAssets();
+            };
+            add_action('init', $callback);
+        }
     }
 
     /**
@@ -142,8 +225,8 @@ class DefaultAssets extends AbstractService
     {
         $callback = function () use (&$callback) {
             remove_action('admin_enqueue_scripts', $callback);
-            $this->enqueueAsset('arrayaccess-admin-css');
-            $this->enqueueAsset('arrayaccess-admin-js');
+            $this->enqueueAsset('arrayaccess-common');
+            $this->enqueueAsset('arrayaccess-admin');
         };
         add_action('admin_enqueue_scripts', $callback);
     }
@@ -191,7 +274,7 @@ class DefaultAssets extends AbstractService
         $asset['deps'] = !is_array($asset['deps']) ? [] : $asset['deps'];
         $asset['ver'] = $asset['ver']??false;
         $asset['ver'] = !is_string($asset['ver']) || trim($asset['ver']) === '' ? false : $asset['ver'];
-
+        $asset['type'] = $asset['type']??null;
         // check if asset is already registered & same value
         if (isset($this->assets[$type][$handle])) {
             $registeredAsset = $this->assets[$type][$handle];
@@ -226,15 +309,19 @@ class DefaultAssets extends AbstractService
     {
         foreach ($this->assets as $type => $assets) {
             foreach ($assets as $handle => $asset) {
-                if (isset($this->registeredAssetsHandle[$handle])) {
+                if (isset($this->registeredAssetsHandle[$type][$handle])) {
                     continue;
                 }
                 if ($type === 'css') {
                     wp_register_style($handle, $asset['src'], $asset['deps'], $asset['ver'], $asset['media']);
                 } else {
                     wp_register_script($handle, $asset['src'], $asset['deps'], $asset['ver'], $asset['in_footer']);
+                    if (($asset['type']??null) === 'module') {
+                        wp_script_add_data($handle, 'type', 'module');
+                    }
                 }
-                $this->registeredAssetsHandle[$handle] = true;
+
+                $this->registeredAssetsHandle[$type][$handle] = true;
             }
         }
     }
@@ -250,6 +337,7 @@ class DefaultAssets extends AbstractService
             remove_action('init', $callback);
             $this->registerAssets();
         };
+
         if ($this->isDoingWrongScripts()) {
             add_action('init', $callback);
             return;

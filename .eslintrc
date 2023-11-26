@@ -31,8 +31,8 @@
             }
         ],
         "array-bracket-spacing": [
-            "error",
-            "always"
+            "warn",
+            "never"
         ],
         "arrow-spacing": [
             "error",

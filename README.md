@@ -47,7 +47,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 - Database schema comparison using doctrine/dbal
 - Object-based WordPress options
 - Stateless Hash Generator, better for stateless API authentication
-
+- Code Editor Using [CodeJar](https://medv.io/codejar/) & [Highlight.js](https://highlightjs.org/)
 
 ## Utilities
 

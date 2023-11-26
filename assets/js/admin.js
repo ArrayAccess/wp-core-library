@@ -5,7 +5,10 @@
     "use strict";
     const init = function () {
         //const wp = w.wp||null;
-        //const $ = w.jQuery||null;
+        // const $ = w.jQuery || null;
+        // if (!$) {
+        //     return;
+        // }
     };
 
     // init on document ready

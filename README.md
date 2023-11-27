@@ -48,6 +48,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 - Object-based WordPress options
 - Stateless Hash Generator, better for stateless API authentication
 - Code Editor Using [CodeJar](https://medv.io/codejar/) & [Highlight.js](https://highlightjs.org/)
+- WP Blocks Widget (Gutenberg)
+
+
+![editor-widget.png](sample-assets/images/editor-widget.png)
+
 
 ## Utilities
 
@@ -57,6 +62,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 - IP Helper: Validate & Generate IP Address.
 - UUID Helper: Generate, validate & parse UUID from version 1 to 5. (RFC 4122)
 - Global Variable Helper: Various helpers to safely call & validate global predefined variables. ($_POST, $_GET, $_SERVER, $_COOKIE, $_ENV, $_FILES, $_REQUEST, $_SESSION)
+
 
 ## Documentation
 

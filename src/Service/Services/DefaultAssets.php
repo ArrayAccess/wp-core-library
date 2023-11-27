@@ -5,23 +5,15 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Service\Services;
-use ArrayAccess\WP\Libraries\Core\Util\Filter;
+use ArrayAccess\WP\Libraries\Core\Service\Traits\URLReplacerTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
 use function add_action;
-use function call_user_func;
 use function did_action;
-use function dirname;
 use function doing_action;
-use function explode;
 use function is_array;
-use function is_callable;
-use function is_numeric;
+use function is_bool;
 use function is_string;
-use function plugins_url;
-use function preg_match;
-use function preg_replace_callback;
 use function remove_action;
-use function site_url;
 use function str_contains;
 use function str_ends_with;
 use function strtolower;
@@ -41,12 +33,12 @@ use function wp_style_is;
  */
 final class DefaultAssets extends AbstractService
 {
-    protected string $serviceName = 'defaultAssets';
+    use URLReplacerTrait;
 
     /**
-     * @var string The dist path.
+     * @var string The service name.
      */
-    protected string $distPath;
+    protected string $serviceName = 'defaultAssets';
 
     /**
      * @var array The queued assets.
@@ -55,6 +47,7 @@ final class DefaultAssets extends AbstractService
         'css' => [],
         'js' => [],
     ];
+
     /**
      * @var array<string, true> The registered assets handle. This is used to prevent duplicate register.
      */
@@ -95,7 +88,7 @@ final class DefaultAssets extends AbstractService
         ],
         'js' => [
             'arrayaccess-common' => [
-                'src' => '{{dist_url}}/js/common.min.js',
+                 'src' => '{{dist_url}}/js/common.min.js',
                 'deps' => [
                     'jquery',
                 ],
@@ -133,24 +126,6 @@ final class DefaultAssets extends AbstractService
     private bool $init = false;
 
     /**
-     * @var array<string, callable> The replacer.
-     */
-    protected array $replacer = [];
-
-    /**
-     * @var array|string[] The reserved replacer.
-     */
-    protected array $reservedReplacer = [
-        'dist_url',
-        'dist_path',
-        'site_url',
-        'home_url',
-        'template_uri',
-        'stylesheet_uri',
-        'plugin_url'
-    ];
-
-    /**
      * @inheritdoc
      */
     protected function onConstruct(): void
@@ -160,27 +135,6 @@ final class DefaultAssets extends AbstractService
             'arrayaccess'
         );
         self::$instance = $this;
-        $this->distPath = Filter::pathURL(
-            dirname(__DIR__, 3) . '/dist'
-        );
-
-        $this->replacer = [];
-    }
-
-    /**
-     * Add replacer.
-     *
-     * @param string $key
-     * @param callable $callback
-     * @return bool Whether the replacer is added.
-     */
-    public function addReplacer(string $key, callable $callback): bool
-    {
-        if (in_array($key, $this->reservedReplacer, true)) {
-            return false;
-        }
-        $this->replacer[$key] = $callback;
-        return true;
     }
 
     /**
@@ -189,67 +143,6 @@ final class DefaultAssets extends AbstractService
     public static function getInstance(): DefaultAssets
     {
         return self::$instance ??= new self(new Services());
-    }
-
-    /**
-     * @param string $string
-     * @return string
-     */
-    public function replace(string $string): string
-    {
-        // after = is argument
-        return preg_replace_callback(
-            '~\{{2}([^}=]+)(?:=([^}]+))?}{2}~',
-            function ($matches) {
-                $replacer = $matches[1];
-                $callback = $this->replacer[$replacer]??null;
-                // is reserved keyword
-                $reserved = !$callback && in_array($replacer, $this->reservedReplacer, true);
-                // return empty string
-                if (!$reserved && (!$callback || !is_callable($callback))) {
-                    return '';
-                }
-
-                // split by | for argument lists
-                $args = $matches[2]??null;
-                $args = $args ? explode('|', $args) : [];
-                $arguments = [];
-                // replace reserved keyword. with real data
-                foreach ($args as $arg) {
-                    $arg = trim($arg);
-                    $lowerArgs = strtolower($arg);
-                    $match = match ($lowerArgs) {
-                        'false' => false,
-                        'true' => true,
-                        'null' => null,
-                        'empty' => '',
-                        default => $arg,
-                    };
-                    if (is_numeric($match)) {
-                        // replace numeric float or integer
-                        $match = str_contains($arg, '.') ? (float) $arg : (int) $arg;
-                    }
-                    if ($match === $arg) {
-                        // replace quote literal have matched start & end
-                        if (preg_match('~^([\'"])(.*)\1$~', $arg, $match)) {
-                            $match = $match[2];
-                        }
-                    }
-                    $arguments[] = $match;
-                }
-                return match ($replacer) {
-                    'dist_url' => $this->getDistURL(),
-                    'dist_path' => $this->getDistPath(),
-                    'site_url' => site_url(...$arguments),
-                    'home_url' => home_url(...$arguments),
-                    'plugin_url' => plugins_url(...$arguments),
-                    'template_uri' => get_template_directory_uri(),
-                    'stylesheet_uri' => get_stylesheet_directory_uri(),
-                    default => !$callback ? '' : call_user_func($callback, ...$arguments)
-                };
-            },
-            $string
-        );
     }
 
     /**
@@ -291,22 +184,6 @@ final class DefaultAssets extends AbstractService
             };
             add_action('init', $callback);
         }
-    }
-
-    /**
-     * @return string The dist path.
-     */
-    public function getDistPath(): string
-    {
-        return $this->distPath;
-    }
-
-    /**
-     * @return string The dist url.
-     */
-    public function getDistURL(): string
-    {
-        return site_url($this->getDistPath());
     }
 
     /**
@@ -363,7 +240,7 @@ final class DefaultAssets extends AbstractService
             return false;
         }
         if (str_contains($asset['src'], '{{')) {
-            $asset['src'] = $this->replace($asset['src']);
+            $asset['src'] = $this->replaceAssets($asset['src']);
         }
         if ($type === 'css') {
             $asset['media'] = $asset['media']??'all';
@@ -387,22 +264,6 @@ final class DefaultAssets extends AbstractService
         }
         $this->assets[$type][$handle] = $asset;
         return true;
-    }
-
-    /**
-     * Check if scripts registration is doing wrong.
-     * This to prevent error on register scripts.
-     *
-     * @return bool
-     */
-    private function isDoingWrongScripts() : bool
-    {
-        return !(
-            did_action('init')
-            || did_action('wp_enqueue_scripts')
-            || did_action('admin_enqueue_scripts')
-            || did_action('login_enqueue_scripts')
-        );
     }
 
     /**

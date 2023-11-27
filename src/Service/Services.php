@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
+use ArrayAccess\WP\Libraries\Core\Service\Services\BlockWidgets;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
@@ -71,6 +72,7 @@ final class Services implements ServicesInterface
      */
     public const DEFAULT_SERVICES = [
         AdminMenu::class,
+        BlockWidgets::class,
         Database::class,
         DefaultAssets::class,
         Hooks::class,
@@ -96,6 +98,7 @@ final class Services implements ServicesInterface
 
         // init the default assets
         $this->get(DefaultAssets::class)?->init();
+        $this->get(BlockWidgets::class)?->init();
     }
 
     /**

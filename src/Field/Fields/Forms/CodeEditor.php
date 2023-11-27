@@ -14,6 +14,7 @@ use function is_string;
 use function preg_match;
 use function sprintf;
 use function str_contains;
+use function strtolower;
 use function wp_kses_post;
 use function wp_script_is;
 use function wp_style_is;
@@ -150,7 +151,7 @@ class CodeEditor extends Textarea
     /**
      * Detect language
      *
-     * @param string $content
+     * @param string $content The content.
      * @return void
      */
     private function languageDetect(string $content): void
@@ -162,15 +163,30 @@ class CodeEditor extends Textarea
             $this->setLanguage('css');
         } elseif (preg_match('~<(head|body|html|!doctype\s+html|div|article)[^>]*>~i', $content)) {
             $this->setLanguage('html');
-        } elseif (preg_match('~<script\s+~', $content)
-            || preg_match('~let\s+[a-z0-9$_]+\s*=|module\.export|window\.~i', $content)
+        } elseif (preg_match('~^#!(\S+/env\s+(?:bash|sh)|/bin/(?:bash|sh))~i', $content, $match)
+            || preg_match('~if\s+\[[^\n]+](?:\s*;)?then.*\n.*fi~', $content)
+        ) {
+            if (!empty($match) && stripos($match[1], 'sh')) {
+                $this->setLanguage('shell');
+            } else {
+                $this->setLanguage('bash');
+            }
+        } elseif (preg_match(
+            '~let\s+[a-z0-9$_]+\s*=|module\.export|window\.~i',
+            $content
+        )
         ) {
             $this->setLanguage('javascript');
-        } elseif (preg_match('~<\?(?:xml(\s+|stylesheet)|svg\s+)~', $content)) {
-            $this->setLanguage('xml');
+        } elseif (preg_match('~<\?(?:xml(\s+|stylesheet)|svg\s+)~', $content, $match)) {
+            $lang = !empty($match[1]) && stripos($match[1], 'svg') ? 'svg' : 'xml';
+            $this->setLanguage($lang);
         } elseif (preg_match('~(?:^|[,\s}])def\s+[a-z0-9]~', $content)) {
             $this->setLanguage('python');
-        } elseif (preg_match('#\s+root\s+[~/]|listen\s+[0-9]+|server_name\s+[^;]+#', $content)) {
+        } elseif (preg_match(
+            '#upstream\s+[{]+\s*\{|\s+root\s+[~/]|listen\s+[0-9]+|server_name\s+[^;]+#',
+            $content
+        )
+        ) {
             $this->setLanguage('nginx');
         } elseif (preg_match(
             '#Order\s+(Deny|Allow)|\s+DocumentRoot\s+[~/]|Listen\s+[0-9]+|ServerName\s+[^;]+#',
@@ -183,9 +199,7 @@ class CodeEditor extends Textarea
             $this->setLanguage('erlang');
         } elseif (preg_match('~\{[^{]+:\s*[^}]+~', $content)) {
             $this->setLanguage('json');
-        } elseif (preg_match('~\w+:\s*~', $content)) {
-            $this->setLanguage('yaml');
-        } elseif (preg_match('~\bselect\s+.+\s+from\s+~i', $content)) {
+        } elseif (preg_match('~\bselect\s+.+\s+from\s+|(?:left|right|outer|inner)\s+join\s+~i', $content)) {
             $this->setLanguage('sql');
         } elseif (preg_match('~\(\s*defn\s+~i', $content)) {
             $this->setLanguage('clojure');
@@ -195,6 +209,18 @@ class CodeEditor extends Textarea
             $this->setLanguage('go');
         } elseif (preg_match('~\bapply\s+plugin\s*:\s*~i', $content)) {
             $this->setLanguage('gradle');
+        } elseif (preg_match(
+            '~
+                (^|\s+)import\s+java\.
+                |(?:public|private|protected)\s+class\s+[_a-z]+
+                | class\s+[_a-z][a-z0-9_]+<[^>]+>
+                |(?:public|private|protected)\s+static\s+(?:\s+
+                    [a-z]+(\[[^]]+)?
+                \s+)?[_a-z][a-z0-9_]+\([^]]+(?:\[[^])]+]\s+)?[a-z0-9_$]+\)
+            ~xi',
+            $content
+        )) {
+            $this->setLanguage('java');
         }
 
         $this->languageHasSet = false;
@@ -205,10 +231,10 @@ class CodeEditor extends Textarea
      */
     public function setAttribute(string $attributeName, mixed $value): static
     {
-        if ($attributeName === 'value'
-            && !$this->languageHasSet
+        if (!$this->languageHasSet
             && is_string($value)
             && $this->getLanguage() === 'plaintext'
+            && strtolower(trim($attributeName)) === 'value'
         ) {
             $html = html_entity_decode($value);
             $this->languageDetect($html);

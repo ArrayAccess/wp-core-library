@@ -185,6 +185,13 @@
                             src    : ["**/*.js", "!**/*.min.js"],
                             dest   : 'dist/js',
                             ext    : '.min.js'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'assets/blocks',
+                            src    : ["**/*.js", "!**/*.min.js"],
+                            dest   : 'dist/blocks',
+                            ext    : '.min.js'
                         }
                     ]
                 },
@@ -289,6 +296,13 @@
                             src    : ['**/*.js'],
                             dest   : 'dist/js',
                             filter : 'isFile'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'assets/blocks',
+                            src    : ['**/*.js'],
+                            dest   : 'dist/blocks',
+                            filter : 'isFile'
                         }
                     ]
                 },
@@ -307,8 +321,13 @@
             },
             watch: {
                 uglify: {
-                    files : ["assets/js/**/*.js", "!assets/js/**/*.min.js"],
-                    tasks : ['uglify:dist']
+                    files: [
+                        "assets/js/**/*.js",
+                        "assets/blocks/**/*.js",
+                        "!assets/js/**/*.min.js",
+                        "!assets/blocks/**/*.min.js"
+                    ],
+                    tasks: ['uglify:dist']
                 },
                 sass: {
                     files : ["assets/scss/**/*.scss", "!assets/scss/**/*.min.scss"],

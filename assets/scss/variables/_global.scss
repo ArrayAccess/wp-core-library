@@ -3,3 +3,8 @@ $prefix: aa-; // prefix for arrayaccess class
 $z-index-admin-bar: 9999; // wp admin bar z-index
 $z-index-admin-menu-wrap: 9990; // wp admin menu wrap z-index
 $z-index-color-picker-holder: $z-index-admin-menu-wrap - 1;
+$m-sunset-orange: #FF605C;
+$m-pastel-orange: #FFBD44;
+$m-malachite: #00CA4E;
+
+$code-editor-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12), 0 3px 1px -2px rgba(0, 0, 0, .2);

@@ -8,9 +8,12 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInte
 use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
-use function dirname;
 use function force_balance_tags;
+use function html_entity_decode;
+use function is_string;
+use function preg_match;
 use function sprintf;
+use function str_contains;
 use function wp_kses_post;
 use function wp_script_is;
 use function wp_style_is;
@@ -47,12 +50,8 @@ class CodeEditor extends Textarea
         'data-code-editor',
         'data-code-editor-mode',
         'data-code-editor-theme',
+        'data-code-editor-resizable',
     ];
-
-    /**
-     * @var string The code mirror theme path.
-     */
-    private string $distDirectory;
 
     /**
      * @var string The code editor type.
@@ -65,35 +64,21 @@ class CodeEditor extends Textarea
     private string $language = 'plaintext';
 
     /**
-     * @param ?string $name
+     * @var bool The code editor is resizable.
      */
-    final public function __construct(?string $name = null)
-    {
-        parent::__construct($name);
-        $this->distDirectory = dirname(__DIR__, 4) . '/dist';
-        $this->doConstruct();
-    }
+    private bool $resizable = true;
 
     /**
-     * @return string The code mirror theme path.
+     * @var bool The language has set.
      */
-    public function getDistDirectory(): string
-    {
-        return $this->distDirectory;
-    }
+    private bool $languageHasSet = false;
 
     /**
-     * Do something after construct.
-     */
-    protected function doConstruct()
-    {
-        // pass
-    }
-
-    /**
-     * @param string $theme
+     * Set Theme
+     * @param string $theme The code editor theme.
      * @param null $found
      * @return $this
+     * @see HighlightJS::THEMES
      */
     public function setTheme(string $theme, &$found = null): static
     {
@@ -104,17 +89,31 @@ class CodeEditor extends Textarea
         return $this;
     }
 
+    /**
+     * Get Theme
+     *
+     * @return string The code editor theme.
+     */
     public function getTheme(): string
     {
         return $this->theme;
     }
 
+    /**
+     * Set Language
+     *
+     * @param string $language The code editor mode.
+     * @param $found
+     * @return $this
+     * @see HighlightJS::LANGUAGES
+     */
     public function setLanguage(string $language, &$found = null): static
     {
         $language = HighlightJS::filterLanguage($language, $found);
         if (!$found) {
             return $this;
         }
+        $this->languageHasSet = true;
         $this->language = $language;
         return $this;
     }
@@ -125,6 +124,97 @@ class CodeEditor extends Textarea
     public function getLanguage(): ?string
     {
         return $this->language;
+    }
+
+    /**
+     * Is the code editor resizable?
+     * @return bool
+     */
+    public function isResizable(): bool
+    {
+        return $this->resizable;
+    }
+
+    /**
+     * Set the code editor is resizable.
+     *
+     * @param bool $resizable The code editor is resizable.
+     * @return $this
+     */
+    public function setResizable(bool $resizable): static
+    {
+        $this->resizable = $resizable;
+        return $this;
+    }
+
+    /**
+     * Detect language
+     *
+     * @param string $content
+     * @return void
+     */
+    private function languageDetect(string $content): void
+    {
+        if (preg_match('~<\?php\s+~i', $content)) {
+            $this->setLanguage('php');
+        } elseif (preg_match('~(?:^|[,\s}])[.#][a-z0-9]~', $content)
+            && str_contains($content, '{')) {
+            $this->setLanguage('css');
+        } elseif (preg_match('~<(head|body|html|!doctype\s+html|div|article)[^>]*>~i', $content)) {
+            $this->setLanguage('html');
+        } elseif (preg_match('~<script\s+~', $content)
+            || preg_match('~let\s+[a-z0-9$_]+\s*=|module\.export|window\.~i', $content)
+        ) {
+            $this->setLanguage('javascript');
+        } elseif (preg_match('~<\?(?:xml(\s+|stylesheet)|svg\s+)~', $content)) {
+            $this->setLanguage('xml');
+        } elseif (preg_match('~(?:^|[,\s}])def\s+[a-z0-9]~', $content)) {
+            $this->setLanguage('python');
+        } elseif (preg_match('#\s+root\s+[~/]|listen\s+[0-9]+|server_name\s+[^;]+#', $content)) {
+            $this->setLanguage('nginx');
+        } elseif (preg_match(
+            '#Order\s+(Deny|Allow)|\s+DocumentRoot\s+[~/]|Listen\s+[0-9]+|ServerName\s+[^;]+#',
+            $content
+        )) {
+            $this->setLanguage('apache');
+        } elseif (preg_match('~\{\{|\{%[^%]+%}\s+~', $content)) {
+            $this->setLanguage('twig');
+        } elseif (preg_match('~\b%%.+|-(?:module|export|record|author)\(\s*["\'\[(]~i', $content)) {
+            $this->setLanguage('erlang');
+        } elseif (preg_match('~\{[^{]+:\s*[^}]+~', $content)) {
+            $this->setLanguage('json');
+        } elseif (preg_match('~\w+:\s*~', $content)) {
+            $this->setLanguage('yaml');
+        } elseif (preg_match('~\bselect\s+.+\s+from\s+~i', $content)) {
+            $this->setLanguage('sql');
+        } elseif (preg_match('~\(\s*defn\s+~i', $content)) {
+            $this->setLanguage('clojure');
+        } elseif (str_contains($content, 'fun ')
+            && preg_match('~\bpackage\s+~i', $content)
+        ) {
+            $this->setLanguage('go');
+        } elseif (preg_match('~\bapply\s+plugin\s*:\s*~i', $content)) {
+            $this->setLanguage('gradle');
+        }
+
+        $this->languageHasSet = false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAttribute(string $attributeName, mixed $value): static
+    {
+        if ($attributeName === 'value'
+            && !$this->languageHasSet
+            && is_string($value)
+            && $this->getLanguage() === 'plaintext'
+        ) {
+            $html = html_entity_decode($value);
+            $this->languageDetect($html);
+        }
+
+        return parent::setAttribute($attributeName, $value);
     }
 
     /**
@@ -150,7 +240,6 @@ class CodeEditor extends Textarea
      */
     public function build(?bool $inline = null): string
     {
-        $inline ??= $this->isInline();
         $attributes = $this->getAttributes();
         // dont set value
         if ($this instanceof UnsupportedValueAttributeInterface) {
@@ -167,6 +256,7 @@ class CodeEditor extends Textarea
         $attributes['class'][] = sprintf('aa-code-editor-%s', $theme);
         $attributes['data-code-editor-theme'] = $theme;
         $attributes['data-code-editor-language'] = $language;
+        $attributes['data-code-editor-resizable'] = $this->isResizable() ? 'true' : 'false';
         /** @noinspection DuplicatedCode */
         $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
         $label = $this->getLabel();

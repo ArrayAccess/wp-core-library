@@ -94,7 +94,7 @@ class HighlightJS
         'xcode',
         'xt256',
     ];
-    public const LANGUAGE = [
+    public const LANGUAGES = [
         '1c',
         'abnf',
         'accesslog',
@@ -318,7 +318,7 @@ class HighlightJS
             return null;
         }
         $mode = strtolower(trim($mode));
-        $found = in_array($mode, self::LANGUAGE);
+        $found = in_array($mode, self::LANGUAGES);
         if (!$found) {
             $mode = null;
         }

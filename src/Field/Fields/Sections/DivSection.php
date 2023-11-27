@@ -53,7 +53,6 @@ class DivSection extends AbstractField implements
 
     /**
      * @inheritdoc
-     * @noinspection PhpNonStrictObjectEqualityInspection
      */
     public function addField(FieldInterface $field): ?FieldInterface
     {

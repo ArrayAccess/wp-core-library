@@ -53,5 +53,27 @@
     max-height: 100vh;
     font-weight: 400;
     padding: 10px;
+    white-space: pre;
+}
+.aa-editor-resizable .aa-editor-area {
     resize: vertical;
+}
+.theme {
+    &-monokai .hljs-number {
+        color: #f05f5f;
+    }
+}
+.aa-document-copy {
+    visibility:hidden;
+    z-index:-1;
+    transition: all ease .2s;
+    opacity: 0;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+}
+div:hover > .aa-document-copy {
+    visibility: visible;
+    z-index:999;
+    opacity: 1;
 }

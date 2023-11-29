@@ -1,0 +1,44 @@
+// ----------------------------------------------------------------------------
+// GLOBAL VARIABLES
+// ----------------------------------------------------------------------------
+// --------------------
+// GLOBAL
+// --------------------
+
+$possible-max-z-index: 999999;
+$zero: 0 !important;
+
+// --------------------
+// colors
+// --------------------
+$m-sunset-orange: #ff605c;
+$m-pastel-orange: #ffbd44;
+$m-malachite: #00ca4e;
+$m-button-stroke-color: rgba(0, 0, 0, .2);
+$m-button-stroke-color-fill: rgba(0, 0, 0, .6);
+
+// --------------------
+// svg icons
+// --------------------
+
+$m-svg-icon-close: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 24 24"><path fill="none" stroke="#{$m-button-stroke-color-fill}" stroke-width="3" d="M1 1l10 10M11 1L1 11"/></svg>');
+$m-svg-icon-minimize: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 24 24"><path fill="none" stroke="#{$m-button-stroke-color-fill}" stroke-width="3" d="M1 6h10"/></svg>');
+// get real svg icon for macos maximize button
+$m-svg-icon-maximize: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 24 24"><path d="M11 1 5 3 9 7M9 7 11 1M1 11 7 9 3 5 1 11" fill="#{$m-button-stroke-color-fill}"/></svg>');
+
+
+// --------------------
+// admin
+// --------------------
+$z-index-admin-bar: 9999; // wp admin bar z-index
+$z-index-admin-menu-wrap: 9990; // wp admin menu wrap z-index
+$z-index-color-picker-holder: $z-index-admin-menu-wrap - 1;
+
+
+// --------------------
+// code editor
+// --------------------
+$code-editor-font-size: .812rem;
+$code-editor-line-height: 1.42857143;
+$code-editor-box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12), 0 3px 1px -2px rgba(0, 0, 0, .2);
+$code-header-height: 40px;

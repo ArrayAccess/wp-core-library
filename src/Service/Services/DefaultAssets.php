@@ -88,7 +88,7 @@ final class DefaultAssets extends AbstractService
         ],
         'js' => [
             'arrayaccess-common' => [
-                 'src' => '{{dist_url}}/js/common.min.js',
+                'src' => '{{dist_url}}/js/common.min.js',
                 'deps' => [
                     'jquery',
                 ],

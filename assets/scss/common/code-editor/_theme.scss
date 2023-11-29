@@ -1,0 +1,11 @@
+/* --------------------------------
+ * Theme
+ * --------------------------------
+ */
+.theme {
+    // monokai - make lighter
+    &-monokai .codejar-linenumber,
+    &-monokai-sublime .codejar-linenumber {
+        color: #b8bbbf !important;
+    }
+}

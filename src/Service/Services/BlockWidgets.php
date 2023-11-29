@@ -5,9 +5,12 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Service\Traits\URLReplacerTrait;
+use function array_filter;
+use function array_merge;
 use function did_action;
 use function doing_action;
 use function has_filter;
+use function is_string;
 use function preg_match;
 use function remove_action;
 use function str_contains;
@@ -46,6 +49,7 @@ class BlockWidgets extends AbstractService
      * @var array<string, bool> The rendered block.
      */
     private array $rendered = [];
+
     /**
      * @var bool Whether the service is initialized.
      */
@@ -61,12 +65,14 @@ class BlockWidgets extends AbstractService
             return;
         }
         $this->init = true;
+        $this->localizeScript();
         $callback = function ($content) use (&$callback) {
-            if (!str_contains($content, '<textarea')) {
-                return $content;
-            }
             remove_filter('the_content', $callback);
-            if (preg_match('~<textarea\s+.+data-arrayaccess-widget="code-editor"~', $content)) {
+            // if content contains data-code-editor attribute
+            // render
+            if (str_contains($content, 'data-code-editor=')
+                && preg_match('~<[a-z]+\s+.+data-code-editor=(["\']?)[^\"\'\s]+\1~', $content)
+            ) {
                 /**
                  * @var DefaultAssets $defaultAssets
                  */
@@ -83,6 +89,40 @@ class BlockWidgets extends AbstractService
             return;
         }
         add_filter('the_content', $callback);
+    }
+
+    /**
+     * Localize the script.
+     *
+     * @return void
+     */
+    private function localizeScript(): void
+    {
+        $widgetTitleList = [
+            'arrayaccess-block-code-editor' => __('ArrayAccess Block Widgets', 'arrayaccess'),
+        ];
+        $hook = $this->getServices()->get(Hooks::class);
+        $newWidgetLists = $hook?->apply('blocks.widgets.title', $widgetTitleList)??$widgetTitleList;
+        $newWidgetLists = !is_string($newWidgetLists) ? [] : $newWidgetLists;
+        $newWidgetLists = array_filter($newWidgetLists, 'is_string');
+        $newWidgetLists = array_merge($widgetTitleList, $newWidgetLists);
+        // add global localized script variable of arrayaccessBlockWidgets
+        // on admin page
+        $callback = function () use (&$callback, $newWidgetLists) {
+            remove_action('admin_enqueue_scripts', $callback);
+            wp_localize_script(
+                'arrayaccess-admin',
+                'arrayaccessBlockWidgets',
+                $newWidgetLists
+            );
+        };
+        if (did_action('admin_enqueue_scripts')
+            || doing_action('admin_enqueue_scripts')
+        ) {
+            $callback();
+        } else {
+            add_action('admin_enqueue_scripts', $callback);
+        }
     }
 
     /**

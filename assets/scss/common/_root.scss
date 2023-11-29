@@ -1,0 +1,29 @@
+@import "../variables";
+@import "../mixins";
+
+/* --------------------------------
+ * VARIABLES
+ * --------------------------------
+ */
+[class^=aa-] {
+    --aa-svg-icon-close: #{$m-svg-icon-close};
+    --aa-svg-icon-minimize: #{$m-svg-icon-minimize};
+    --aa-svg-icon-maximize: #{$m-svg-icon-maximize};
+    --aa-minimize-bg-color: #{$m-pastel-orange};
+    --aa-maximize-bg-color: #{$m-malachite};
+    --aa-close-bg-color: #{$m-sunset-orange};
+
+    &,
+    &::before,
+    &::after,
+    *::after,
+    *::before {
+        box-sizing: border-box;
+    }
+
+    @include clearfix;
+}
+
+.aa-clearfix {
+    @include clearfix;
+}

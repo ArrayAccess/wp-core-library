@@ -1,0 +1,245 @@
+@import "../../variables";
+@import "../../mixins";
+
+/* --------------------------------
+ * PRELOAD EDITOR
+ * --------------------------------
+ */
+:not(.aa-editor-inner-wrap) {
+    textarea[data-code-editor=codejar],
+    pre.aa-code-editor {
+        &,
+        &:focus {
+            outline: none;
+            width: 98%;
+            margin: .5rem auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            line-height: $code-editor-line-height;
+            font-size: $code-editor-font-size;
+            overflow: auto;
+        }
+    }
+}
+
+/* --------------------------------
+ * CODE EDITOR
+ * --------------------------------
+ */
+.aa-editor-wrap {
+    position: relative;
+
+    // Preload editor
+    pre.aa-code-editor,
+    textarea[data-code-editor] {
+        @include hide;
+    }
+
+    .inner-codejar-wrap {
+        transition: transform ease-in-out .3s;
+        transform: translateX(0);
+    }
+
+    // Inner wrap
+    .aa-editor-inner-wrap {
+        position: relative;
+        margin: .5rem .1rem;
+        padding: 0;
+        border-radius: 5px;
+        letter-spacing: normal;
+        tab-size: 4;
+        overflow: hidden;
+        line-height: $code-editor-line-height;
+        font-size: $code-editor-font-size;
+        box-shadow: $code-editor-box-shadow;
+    }
+
+    // header
+    .aa-editor-header {
+        position: relative;
+        font-size: .9em;
+        padding: 7px 10px 5px 10px;
+        height: $code-header-height;
+        line-height: $code-header-height;
+        top: -2px;
+        z-index: 999;
+        background: rgba(0, 0, 0, .18);
+        box-shadow: 0 2px 0 1px rgba(0, 0, 0, .2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        align-content: center;
+
+        > span {
+            position: relative;
+            display: flex;
+            align-items: center;
+            align-content: center;
+            flex: 1 1 auto;
+            vertical-align: middle;
+
+            &:first-child {
+                justify-content: flex-start;
+                flex: 0 0 auto;
+
+                span {
+                    position: relative;
+                }
+
+                > span {
+                    cursor: pointer;
+                    display: inline-block;
+                    border-radius: 50%;
+                    width: 10px;
+                    height: 10px;
+                    border: 1px solid $m-button-stroke-color;
+                    margin-right: 6px;
+
+                    &::before {
+                        content: "";
+                        position: absolute;
+                        top: 3px;
+                        left: 3px;
+                        transform: translate(-50%, -50%);
+                        width: 14px;
+                        height: 14px;
+                        display: flex;
+                        align-content: center;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0;
+                    }
+
+                    &:first-child {
+                        background: var(--aa-close-bg-color, $m-sunset-orange);
+
+                        &::before {
+                            background: var(--aa-svg-icon-close) no-repeat center center;
+                        }
+
+                        + span {
+                            background: var(--aa-minimize-bg-color, $m-malachite);
+
+                            &::before {
+                                background: var(--aa-svg-icon-minimize) no-repeat center center;
+                            }
+
+                            + span {
+                                background: var(--aa-maximize-bg-color, $m-pastel-orange);
+
+                                &::before {
+                                    background: var(--aa-svg-icon-maximize) no-repeat center center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                &:hover {
+                    ::before {
+                        opacity: 1;
+                    }
+                }
+            }
+
+            // Language
+            &.aa-header-language {
+                font-style: italic;
+                font-size: .9em;
+                padding: 1px 5px;
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+                justify-content: flex-end;
+            }
+        }
+    }
+
+    // editor
+    .aa-editor-area {
+        min-height: 50px;
+        max-height: 200vh;
+        font-weight: 400;
+        padding: 10px;
+        white-space: pre;
+    }
+
+    &.aa-editor-resizable .aa-editor-area {
+        resize: vertical;
+    }
+
+    // copier
+    .aa-document-copy {
+        visibility: hidden;
+        z-index: -1;
+        opacity: 0;
+        cursor: pointer;
+        width: 20px;
+        height: 20px;
+        transition: all ease .2s;
+    }
+
+    // on hover
+    :hover > .aa-document-copy {
+        visibility: visible;
+        z-index: 999;
+        opacity: 1;
+    }
+
+    // wrap code editor
+    &[data-code-editor-screen=c] {
+        min-height: $code-header-height !important;
+        max-height: $code-header-height !important;
+        height: $code-header-height !important;
+    }
+
+    .aa-editor-wrap[data-code-editor-screen=c] .inner-codejar-wrap {
+        z-index: 20;
+        /* height: 0 !important;
+        max-height: 0 !important;
+        min-height: 0 !important;
+        padding-bottom: 0 !important; */
+        transform: translateX(calc(-100% - $code-header-height));
+    }
+
+    &[data-code-editor-screen=c] {
+        .aa-editor-area {
+            height: 0 !important;
+            max-height: 0 !important;
+            min-height: 0 !important;
+            padding-bottom: 0 !important;
+            padding-top: 0 !important;
+        }
+    }
+
+    &[data-code-editor-screen="f"] {
+        position: fixed !important;
+        z-index: $possible-max-z-index;
+        top: $zero;
+        bottom: $zero;
+        left: $zero;
+        right: $zero;
+        max-height: 100vh !important;
+        height: 100vh !important;
+        width: 100vw;
+        max-width: 100vw;
+        margin: $zero;
+
+        .aa-editor-inner-wrap {
+            padding: $zero;
+            margin: $zero;
+        }
+
+        .aa-editor-area {
+            height: calc(100vh - $code-header-height) !important;
+            max-height: 100vh !important;
+            min-height: calc(100vh - $code-header-height) !important;
+            padding-bottom: $zero;
+        }
+    }
+
+}
+/* Full Editor Mode - overflow: hidden*/
+body[data-code-editor-screen-mode=f] {
+    overflow: hidden;
+}

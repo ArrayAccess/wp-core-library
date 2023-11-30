@@ -6,13 +6,14 @@ namespace ArrayAccess\WP\Libraries\Core\Service;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
-use ArrayAccess\WP\Libraries\Core\Service\Services\BlockWidgets;
+use ArrayAccess\WP\Libraries\Core\Service\Services\Blocks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Rest;
 use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
+use ArrayAccess\WP\Libraries\Core\Service\Traits\URLReplacerTrait;
 use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ReflectionClass;
@@ -27,6 +28,8 @@ use function strtolower;
  */
 final class Services implements ServicesInterface
 {
+    use URLReplacerTrait;
+
     /**
      * The services.
      *
@@ -72,7 +75,7 @@ final class Services implements ServicesInterface
      */
     public const DEFAULT_SERVICES = [
         AdminMenu::class,
-        BlockWidgets::class,
+        Blocks::class,
         Database::class,
         DefaultAssets::class,
         Hooks::class,
@@ -97,8 +100,8 @@ final class Services implements ServicesInterface
         }
 
         // init the default assets
-        $this->get(DefaultAssets::class)?->init();
-        $this->get(BlockWidgets::class)?->init();
+        $this->get(DefaultAssets::class)->init();
+        $this->get(Blocks::class)?->init();
     }
 
     /**

@@ -5,7 +5,6 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
 use ArrayAccess\WP\Libraries\Core\Service\Services;
-use ArrayAccess\WP\Libraries\Core\Service\Traits\URLReplacerTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
 use function add_action;
 use function did_action;
@@ -33,8 +32,6 @@ use function wp_style_is;
  */
 final class DefaultAssets extends AbstractService
 {
-    use URLReplacerTrait;
-
     /**
      * @var string The service name.
      */
@@ -77,7 +74,7 @@ final class DefaultAssets extends AbstractService
                 'ver' => '1.0.0',
                 'media' => 'all',
             ],
-            'arrayaccess-highlightjs' => [
+            'arrayaccess-editor' => [
                 'src' => '{{dist_url}}/highlightjs/highlight.bundle.min.css',
                 'deps' => [
                     'arrayaccess-common'
@@ -104,15 +101,11 @@ final class DefaultAssets extends AbstractService
                 'ver' => '1.0.0',
                 'in_footer' => true,
             ],
-            'arrayaccess-highlightjs' => [
-                'src' => '{{dist_url}}/highlightjs/highlight.bundle.js',
-                'deps' => [],
-                'ver' => HighlightJS::VERSION,
-                'in_footer' => true,
-            ],
             'arrayaccess-editor' => [
                 'src' => '{{dist_url}}/js/editor.bundle.min.js',
-                'deps' => [],
+                'deps' => [
+                    'arrayaccess-common',
+                ],
                 'ver' => '1.0.0',
                 'in_footer' => false,
                 // 'type' => 'module'
@@ -180,9 +173,10 @@ final class DefaultAssets extends AbstractService
             $this->registerAdminAssets();
         } else {
             $callback = function () use (&$callback) {
+                remove_action('init', $callback, 99999);
                 $this->registerAdminAssets();
             };
-            add_action('init', $callback);
+            add_action('init', $callback, 99999);
         }
     }
 
@@ -240,7 +234,7 @@ final class DefaultAssets extends AbstractService
             return false;
         }
         if (str_contains($asset['src'], '{{')) {
-            $asset['src'] = $this->replaceAssets($asset['src']);
+            $asset['src'] = $this->services->replaceURL($asset['src']);
         }
         if ($type === 'css') {
             $asset['media'] = $asset['media']??'all';
@@ -302,7 +296,7 @@ final class DefaultAssets extends AbstractService
             $this->registerAssets();
         };
 
-        if ($this->isDoingWrongScripts()) {
+        if ($this->services->isDoingWrongScripts()) {
             add_action('init', $callback);
             return;
         }
@@ -355,7 +349,7 @@ final class DefaultAssets extends AbstractService
         };
 
         // check if scripts registration is doing wrong.
-        if ($this->isDoingWrongScripts()) {
+        if ($this->services->isDoingWrongScripts()) {
             add_action('init', $callback);
             return;
         }

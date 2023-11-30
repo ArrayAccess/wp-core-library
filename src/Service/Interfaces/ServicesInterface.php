@@ -6,7 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Service\Interfaces;
 /**
  * Interface ServicesInterface for services
  */
-interface ServicesInterface
+interface ServicesInterface extends ReplacerUrlInterface
 {
     /**
      * Add service if not exists

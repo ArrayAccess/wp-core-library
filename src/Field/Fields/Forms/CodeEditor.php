@@ -254,7 +254,6 @@ class CodeEditor extends Textarea
         ) {
             $defaultAssets = DefaultAssets::getInstance();
             $defaultAssets->init();
-            $defaultAssets->enqueueAsset('arrayaccess-highlightjs', 'css');
             $defaultAssets->enqueueAsset('arrayaccess-editor');
         }
 

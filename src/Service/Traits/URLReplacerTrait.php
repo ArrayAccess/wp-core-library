@@ -63,7 +63,7 @@ trait URLReplacerTrait
      * @param string $string
      * @return string
      */
-    public function replaceAssets(string $string): string
+    public function replaceURL(string $string): string
     {
         // after = is argument
         return preg_replace_callback(
@@ -144,7 +144,7 @@ trait URLReplacerTrait
      *
      * @return bool
      */
-    private function isDoingWrongScripts() : bool
+    public function isDoingWrongScripts() : bool
     {
         return !(
             did_action('init')

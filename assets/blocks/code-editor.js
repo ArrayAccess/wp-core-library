@@ -84,6 +84,9 @@
     ];
     const languages = [];
     const HighlightJS = window.hljs;
+    if (!HighlightJS) {
+        return;
+    }
     HighlightJS.listLanguages().forEach((lang) => {
         if (languages.indexOf(lang) === -1) {
             languages.push(lang);
@@ -100,14 +103,19 @@
     });
     languages.sort();
     themes.sort();
-    const widget = window['arrayaccessBlockWidgets'] || {};
-    let title = widget['arrayaccess-block-code-editor'];
+    const widgetTitle = window['arrayaccessBlockWidgetsTitle'] || {};
+    const widgetIcon = window['arrayaccessBlockWidgetsIcons'] || {};
+    let title = widgetTitle['arrayaccess-block-code-editor'],
+        icon = widgetIcon['arrayaccess-block-code-editor'];
     if (!title || typeof title !== 'string') {
         title = __('Highlight Code Editor', 'arrayaccess');
     }
+    if (!icon || typeof icon !== 'string') {
+        icon = 'editor-code';
+    }
     registerBlockType('arrayaccess-block-code-editor/widget', {
         title      : title,
-        icon       : 'editor-code',
+        icon       : icon,
         category   : 'text',
         attributes : {
             content: {

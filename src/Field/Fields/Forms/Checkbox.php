@@ -24,6 +24,11 @@ class Checkbox extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'checkbox';
+
+    /**
      * Set input type
      *
      * @param bool $checked checked or not

@@ -7,11 +7,11 @@ use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Hidden;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldValuesInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldSetterInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\AppendedValuesTrait;
-use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldTrait;
+use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function force_balance_tags;
 use function is_string;
@@ -22,12 +22,12 @@ use function strtolower;
  * Form wrapper
  */
 class Form extends AbstractField implements
-    MultipleFieldInterface,
+    MultipleFieldSetterInterface,
     UnsupportedValueAttributeInterface,
     UnsupportedNameAttributeInterface,
     FieldValuesInterface
 {
-    use MultiFieldTrait,
+    use MultiFieldSetterTrait,
         AppendedValuesTrait;
 
     public const ENC_TYPE_APPLICATION_X_WWW_FORM_URLENCODED = 'application/x-www-form-urlencoded';

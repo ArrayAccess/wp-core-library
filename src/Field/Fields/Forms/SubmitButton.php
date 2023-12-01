@@ -14,6 +14,14 @@ class SubmitButton extends Button
         'wrapper' => 'p'
     ];
 
+    /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'submit';
+
+    /**
+     * @inheritdoc
+     */
     public function __construct(?string $name = null)
     {
         parent::__construct($name);

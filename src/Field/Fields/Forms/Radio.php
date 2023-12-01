@@ -24,6 +24,11 @@ class Radio extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'radio';
+
+    /**
      * Set checked attribute
      *
      * @param bool $checked true to set checked attribute, false to remove

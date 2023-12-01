@@ -13,6 +13,11 @@ class Hidden extends Input
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'hidden';
+
+    /**
      * Set input type
      */
     public function setType(string $type): static

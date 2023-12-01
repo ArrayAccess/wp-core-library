@@ -48,6 +48,15 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var array|string[] The allowed types.
+     */
+    protected array $allowedTypes = [
+        'text',
+        'hidden',
+        'password'
+    ];
+
+    /**
      * @var array|string[] The disallowing remove attributes.
      */
     protected array $disallowRemoveAttributes = [

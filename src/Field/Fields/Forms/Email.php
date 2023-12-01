@@ -26,6 +26,11 @@ class Email extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'email';
+
+    /**
      * Set email address
      *
      * @param string $email

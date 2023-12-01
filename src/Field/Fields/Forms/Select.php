@@ -230,7 +230,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
             $label = str_contains($label, '<') ? force_balance_tags($label) : esc_html($label);
             $html = $inline ? '<label class="aa-label aa-label-inline" for="'
                 . $this->getId() . '">'
-                . '<span class="field-label">'
+                . '<span class="aa-field-label">'
                 . $label
                 . '</span>'
                 . $html

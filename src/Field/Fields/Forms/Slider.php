@@ -29,6 +29,11 @@ class Slider extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'slider';
+
+    /**
      * Set the min attribute.
      *
      * @param int $min

@@ -5,6 +5,7 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
+use function strtolower;
 
 class Button extends AbstractField implements FormFieldTypeInterface
 {
@@ -28,6 +29,15 @@ class Button extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var array Allowed a button type
+     */
+    protected array $allowedTypes = [
+        'button',
+        'submit',
+        'reset',
+    ];
+
+    /**
      * @param string $text button text, support html
      *
      * @return $this
@@ -46,6 +56,10 @@ class Button extends AbstractField implements FormFieldTypeInterface
      */
     public function setType(string $type): static
     {
+        $type = strtolower(trim($type));
+        if (!in_array($type, $this->allowedTypes, true)) {
+            return $this;
+        }
         $this->attributes['type'] = $type;
         return $this;
     }

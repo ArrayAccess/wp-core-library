@@ -6,8 +6,8 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldTrait;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldSetterInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use function spl_object_hash;
 
 /**
@@ -15,9 +15,9 @@ use function spl_object_hash;
  * Build with the same name and different value.
  * Only support radio and checkbox.
  */
-class MultiInput extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
+class MultiInput extends AbstractField implements MultipleFieldSetterInterface, FormFieldTypeInterface
 {
-    use MultiFieldTrait;
+    use MultiFieldSetterTrait;
 
     /**
      * @var string The tag name.
@@ -30,6 +30,7 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
     public function __construct(?string $name = null, bool $isRadio = true)
     {
         $this->attributes['type'] = $isRadio ? 'radio' : 'checkbox';
+        $this->staticType = $this->attributes['type'];
         parent::__construct($name);
     }
 
@@ -37,15 +38,16 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
      * Set checked field
      *
      * @param FieldInterface $field
+     * @param bool $checked
      * @return $this
      */
-    public function setChecked(FieldInterface $field): static
+    public function setChecked(FieldInterface $field, bool $checked = true): static
     {
         $id = spl_object_hash($field);
-        foreach ($this->fields as $f) {
-            if (spl_object_hash($f) === $id) {
+        foreach ($this->getFields() as $f) {
+            if ($checked && spl_object_hash($f) === $id) {
                 $f->setAttribute('checked', true);
-            } else {
+            } elseif ($this->staticType !== 'radio' || ! $checked) {
                 $f->removeAttribute('checked');
             }
         }
@@ -57,9 +59,15 @@ class MultiInput extends AbstractField implements MultipleFieldInterface, FormFi
      */
     public function getValue(): mixed
     {
-        foreach ($this->fields as $field) {
+        $isRadio = $this->staticType === 'radio';
+        $result = null;
+        foreach ($this->getFields() as $field) {
             if ($field->getAttribute('checked')) {
-                return $field->getAttribute('value');
+                if ($isRadio) {
+                    return $field->getAttribute('value');
+                }
+                $result ??= [];
+                $result[] = $field->getAttribute('value');
             }
         }
 

@@ -13,12 +13,15 @@ use Stringable;
 use function array_filter;
 use function array_key_exists;
 use function array_map;
+use function array_unique;
+use function array_values;
 use function did_action;
 use function doing_action;
 use function explode;
 use function force_balance_tags;
 use function in_array;
 use function is_array;
+use function is_callable;
 use function is_iterable;
 use function is_null;
 use function is_numeric;
@@ -74,6 +77,16 @@ abstract class AbstractField implements FieldInterface
     ];
 
     /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = null;
+
+    /**
+     * @var array The allowed types.
+     */
+    protected array $allowedTypes = [];
+
+    /**
      * @var array<string> The disallowed attributes.
      */
     protected array $disallowedAttributes = [];
@@ -91,13 +104,16 @@ abstract class AbstractField implements FieldInterface
     /**
      * @var bool
      */
-    private bool $inline = false;
+    protected bool $inline = false;
 
     /**
      * @var int The increment.
      */
     private int $increment;
 
+    /**
+     * @inheritdoc
+     */
     public function __construct(?string $name = null)
     {
         $this->tagName ??= strtolower((new ReflectionClass($this))->getShortName());
@@ -109,6 +125,13 @@ abstract class AbstractField implements FieldInterface
         $this->setAttribute('class', $this->attributes['class']);
         if ($name !== null) {
             $this->setName($name);
+        }
+        if ($this->staticType !== null) {
+            $this->disallowRemoveAttributes[] = 'type';
+            $this->disallowRemoveAttributes = array_values(
+                array_unique($this->disallowRemoveAttributes)
+            );
+            $this->attributes['type'] = $this->staticType;
         }
     }
 
@@ -200,6 +223,15 @@ abstract class AbstractField implements FieldInterface
         if ($attributeName === '') {
             return $this;
         }
+        if ($attributeName === 'type') {
+            if ($this->staticType !== null) {
+                return $this;
+            }
+            if (!empty($this->allowedTypes) && !in_array($value, $this->allowedTypes, true)) {
+                return $this;
+            }
+        }
+
         if (in_array($attributeName, $this->disallowedAttributes, true)) {
             return $this;
         }
@@ -373,13 +405,19 @@ abstract class AbstractField implements FieldInterface
 
         $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
         $label = $this->getLabel();
+        if (is_callable([$this, 'getOverrideLabel'])) {
+            $overrideLabel = $this->getOverrideLabel();
+            $label = is_string($overrideLabel) || is_null($overrideLabel)
+                ? $overrideLabel
+                : $label;
+        }
         $html = $tag;
         if ($label) {
             $html = '';
             $label = force_balance_tags($label);
             if ($inline) {
                 $html .= '<label class="aa-label aa-label-inline" for="' . $this->getId() . '">'
-                    . '<span class="field-label">'
+                    . '<span class="aa-field-label">'
                     . $label
                     . '</span>'
                     . $tag
@@ -408,6 +446,10 @@ abstract class AbstractField implements FieldInterface
         $instance->setAttributes($attributes);
         return $instance;
     }
+
+    /**
+     * @inheritdoc
+     */
     public function isRequired(): bool
     {
         return !HtmlAttributes::isBooleanAttributeEnabled(
@@ -437,21 +479,26 @@ abstract class AbstractField implements FieldInterface
         if (is_null($value) && $allowNull) {
             return !HtmlAttributes::isBooleanAttributeEnabled('required', $required);
         }
-        $minLength = $this->getAttribute('minlength');
-        $maxLength = $this->getAttribute('maxlength');
-        if (is_numeric($minLength)) {
-            $minLength = (int) $minLength;
-            if (is_string($value) && strlen($value) < $minLength) {
-                return false;
+        // radio && checkbox is not required length
+        $type = $this->getAttribute('type')??'';
+        $type = is_string($type) ? strtolower($type) : '';
+        if (!in_array($type, ['radio', 'checkbox'], true)) {
+            $minLength = $this->getAttribute('minlength');
+            $maxLength = $this->getAttribute('maxlength');
+            if (is_numeric($minLength)) {
+                $minLength = (int)$minLength;
+                if (is_string($value) && strlen($value) < $minLength) {
+                    return false;
+                }
+                return true;
             }
-            return true;
-        }
-        if (is_numeric($maxLength)) {
-            $maxLength = (int)$maxLength;
-            if (is_string($value) && strlen($value) > $maxLength) {
-                return false;
+            if (is_numeric($maxLength)) {
+                $maxLength = (int)$maxLength;
+                if (is_string($value) && strlen($value) > $maxLength) {
+                    return false;
+                }
+                return true;
             }
-            return true;
         }
         return ! empty($value) || !HtmlAttributes::isBooleanAttributeEnabled(
             'required',

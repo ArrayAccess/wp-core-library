@@ -7,11 +7,11 @@ use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldValuesInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\LabelAsTitleInterface;
-use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldSetterInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\AppendedValuesTrait;
-use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldTrait;
+use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use function spl_object_hash;
 
 /**
@@ -19,13 +19,13 @@ use function spl_object_hash;
  * Label is title
  */
 class DivSection extends AbstractField implements
-    MultipleFieldInterface,
+    MultipleFieldSetterInterface,
     UnsupportedValueAttributeInterface,
     UnsupportedNameAttributeInterface,
     FieldValuesInterface,
     LabelAsTitleInterface
 {
-    use MultiFieldTrait,
+    use MultiFieldSetterTrait,
         AppendedValuesTrait;
 
     /**

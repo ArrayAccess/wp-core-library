@@ -17,6 +17,11 @@ class ResetButton extends Button implements
         'type' => 'reset',
     ];
 
+    /**
+     * @var ?string The static type.
+     */
+    protected ?string $staticType = 'reset';
+
     public function __construct(?string $name = null)
     {
         $this->attributes['html'] = __('Reset', 'array-access');

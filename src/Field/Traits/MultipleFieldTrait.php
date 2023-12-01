@@ -15,12 +15,10 @@ use function explode;
 use function force_balance_tags;
 use function is_string;
 use function sanitize_html_class;
-use function spl_object_hash;
 use function sprintf;
-use function str_contains;
 use function wp_kses_post;
 
-trait MultiFieldTrait
+trait MultipleFieldTrait
 {
     /**
      * @var array<FieldInterface> The fields.
@@ -48,44 +46,6 @@ trait MultiFieldTrait
     }
 
     /**
-     * @inheritdoc
-     */
-    public function addField(FieldInterface $field) : ?FieldInterface
-    {
-        if ($field === $this) {
-            return null;
-        }
-
-        // if tag name is not same, return null
-        if ($field->getTagName() !== $this->tagName) {
-            return null;
-        }
-
-        $field = clone $field;
-        $type = $this->getAttribute('type');
-        if ($field->getAttribute('type') !== $type) {
-            return null;
-        }
-        $this->fields[spl_object_hash($field)] = $field;
-        return $field;
-    }
-
-    /**
-     * Remove a field
-     *
-     * @param FieldInterface $field
-     * @return bool
-     */
-    public function removeField(FieldInterface $field): bool
-    {
-        if (isset($this->fields[spl_object_hash($field)])) {
-            unset($this->fields[spl_object_hash($field)]);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Clear all fields
      */
     public function clearFields(): void
@@ -96,7 +56,7 @@ trait MultiFieldTrait
     /**
      * Get the fields
      *
-     * @return array<FieldInterface>
+     * @return array<string, FieldInterface>
      */
     public function getFields() : array
     {
@@ -198,7 +158,7 @@ trait MultiFieldTrait
                 '<div class="%s">%s</div>',
                 'aa-multi-label-title',
                 str_contains($label, '<') ? force_balance_tags($label) : (
-                    $label ? esc_html($label) : '&nbsp;'
+                $label ? esc_html($label) : '&nbsp;'
                 )
             );
             $sectionWrap = sprintf(

@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Util;
 use ArrayAccess\WP\Libraries\Core\Exceptions\RuntimeException;
 use ReflectionClass;
 use function array_filter;
+use function array_values;
 use function bcadd;
 use function bccomp;
 use function bcmul;
@@ -1126,5 +1127,40 @@ class Filter
     {
         $path = self::pathURL($path);
         return $path ? site_url($path) : null;
+    }
+
+    /**
+     * Filter accepted methods
+     *
+     * @param $acceptedMethods
+     * @return ?array array if valid accepted methods, null if accept all methods
+     */
+    public static function filterMethods($acceptedMethods): ?array
+    {
+        if (is_string($acceptedMethods)) {
+            $acceptedMethods = [$acceptedMethods];
+        }
+        if (is_array($acceptedMethods)) {
+            foreach ($acceptedMethods as $key => $value) {
+                if (!is_string($value)) {
+                    unset($acceptedMethods[$key]);
+                    continue;
+                }
+                $value = strtoupper(trim($value));
+                if ($value === '') {
+                    unset($acceptedMethods[$key]);
+                    continue;
+                }
+                if ($value === 'ANY' || $value === '*' || $value === 'ALL') {
+                    $acceptedMethods = [];
+                    break;
+                }
+                $acceptedMethods[$key] = $value;
+            }
+            $acceptedMethods = array_values($acceptedMethods);
+        } else {
+            $acceptedMethods = null;
+        }
+        return empty($acceptedMethods) ? null : $acceptedMethods;
     }
 }

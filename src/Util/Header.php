@@ -205,7 +205,7 @@ class Header
     }
 
     /**
-     * Check if header exists
+     * Check if the header exists
      *
      * @param string $key
      * @return bool
@@ -253,6 +253,20 @@ class Header
             $values[] = $v;
         }
         $obj->headers[$key] = $values;
+        return $obj;
+    }
+
+    /**
+     * Without header, clone object
+     *
+     * @param string $key Header name to remove
+     * @return $this Header
+     */
+    public function withoutHeader(string $key) : self
+    {
+        $obj = clone $this;
+        $key = $this->normalizeKey($key);
+        unset($obj->headers[$key]);
         return $obj;
     }
 }

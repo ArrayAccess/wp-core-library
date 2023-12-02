@@ -25,9 +25,8 @@ abstract class AbstractHttpRequestUtil implements HttpRequestUtilInterface
      */
     public static function get(string $key, $default = null, &$found = null) : mixed
     {
-        return Variables::containKey($key, static::all())
-            ? static::all()[$key]
-            : $default;
+        $found = Variables::containKey($key, static::all());
+        return $found ? static::all()[$key] : $default;
     }
 
     /**

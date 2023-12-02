@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Ajax\Interfaces\JsonResponseInterface;
 use ArrayAccess\WP\Libraries\Core\Ajax\Interfaces\JsonSenderInterface;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use Throwable;
+use function call_user_func;
 
 class CallbackHandler extends AbstractHandler
 {

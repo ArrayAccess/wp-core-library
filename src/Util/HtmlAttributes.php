@@ -263,6 +263,37 @@ class HtmlAttributes
         'colspan' => true,
         'maxlength' => true,
         'minlength' => true,
+        'min' => true,
+        'max' => true,
+        'step' => true,
+        'tabindex' => true,
+        'start' => true,
+        'optimum' => true,
+        'span' => true,
+        'size' => true,
+        'high' => true,
+        'width' => true,
+        'height' => true,
+    ];
+
+    public const ATTRIBUTES_POSITIVE_INTEGER_TYPES = [
+        'rowspan' => true,
+        'rows' => true,
+        'cols' => true,
+        'colspan' => true,
+        'maxlength' => true,
+        'minlength' => true,
+        'min' => true,
+        'max' => true,
+        'step' => true,
+        'tabindex' => true,
+        'start' => true,
+        'optimum' => true,
+        'span' => true,
+        'size' => true,
+        'high' => true,
+        'width' => true,
+        'height' => true,
     ];
 
     /**
@@ -409,6 +440,11 @@ class HtmlAttributes
             $values = array_filter($values);
             $value = implode(' ', $values);
         }
+        if ($lowerKey === 'accept') {
+            $value = Filter::filterAccept($value);
+            $value = implode(',', $value);
+        }
+
         return is_string($value)
             ? [
                 'key' => self::HTML_ATTRIBUTES[$lowerKey]??$name,
@@ -438,8 +474,15 @@ class HtmlAttributes
             // filter!
             if (isset(self::ATTRIBUTES_NUMERIC_TYPES[$key])) {
                 $value = is_numeric($value) ? $value : '';
-            } elseif (isset(self::ATTRIBUTES_INTEGER_TYPES[$key])) {
+            } elseif (isset(self::ATTRIBUTES_INTEGER_TYPES[$key])
+                || isset(self::ATTRIBUTES_POSITIVE_INTEGER_TYPES[$key])
+            ) {
                 $value = is_numeric($value) ? (string) intval($value) : '';
+                if (isset(self::ATTRIBUTES_POSITIVE_INTEGER_TYPES[$key])
+                    && is_numeric($value)
+                ) {
+                    $value = $value < 0 ? '' : $value;
+                }
             }
 
             $key = self::HTML_ATTRIBUTES[$key]??$key;

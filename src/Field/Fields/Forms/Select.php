@@ -52,6 +52,12 @@ class Select extends AbstractField implements FormFieldTypeInterface
         'checked',
         'selected',
         'multiple',
+        'min',
+        'max',
+        'step',
+        'size',
+        'maxlength',
+        'minlength',
     ];
 
     /**

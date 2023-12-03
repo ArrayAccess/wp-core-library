@@ -22,6 +22,28 @@ class ResetButton extends Button implements
      */
     protected ?string $staticType = 'reset';
 
+    /**
+     * @var array|string[] The default disallowed attributes.
+     */
+    protected array $disallowedAttributes = [
+        'maxlength',
+        'minlength',
+        'pattern',
+        'placeholder',
+        'readonly',
+        'required',
+        'size',
+        'autocomplete',
+        'autofocus',
+        'list',
+        'multiple',
+        'step',
+        'max',
+        'min',
+        'name',
+        'value',
+    ];
+
     public function __construct(?string $name = null)
     {
         $this->attributes['html'] = __('Reset', 'array-access');

@@ -26,9 +26,11 @@ use function is_bool;
 use function is_callable;
 use function is_float;
 use function is_int;
+use function is_iterable;
 use function is_numeric;
 use function is_object;
 use function is_string;
+use function iterator_to_array;
 use function ltrim;
 use function min;
 use function number_format;
@@ -1132,10 +1134,10 @@ class Filter
     /**
      * Filter accepted methods
      *
-     * @param $acceptedMethods
+     * @param mixed $acceptedMethods
      * @return ?array array if valid accepted methods, null if accept all methods
      */
-    public static function filterMethods($acceptedMethods): ?array
+    public static function filterMethods(mixed $acceptedMethods): ?array
     {
         if (is_string($acceptedMethods)) {
             $acceptedMethods = [$acceptedMethods];
@@ -1162,5 +1164,46 @@ class Filter
             $acceptedMethods = null;
         }
         return empty($acceptedMethods) ? null : $acceptedMethods;
+    }
+
+    /**
+     * Filter input accept
+     *
+     * @param mixed $accept
+     * @return array
+     */
+    public static function filterAccept(mixed $accept) : array
+    {
+        if (is_string($accept)) {
+            $accept = [$accept];
+        }
+        if (!is_array($accept) && is_iterable($accept)) {
+            $accept = iterator_to_array($accept);
+        }
+
+        if (is_array($accept)) {
+            foreach ($accept as $key => $value) {
+                if (!is_string($value)) {
+                    unset($accept[$key]);
+                    continue;
+                }
+                $value = trim($value);
+                if ($value === '') {
+                    unset($accept[$key]);
+                    continue;
+                }
+                $accept[$key] = $value;
+            }
+            $accept = array_values($accept);
+        } else {
+            $accept = [];
+        }
+
+        if (in_array('*/*', $accept, true)) {
+            $accept = ['*/*'];
+        } elseif (in_array('*', $accept, true)) {
+            $accept = ['*'];
+        }
+        return $accept;
     }
 }

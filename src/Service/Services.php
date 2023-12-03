@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Service;
 
+use ArrayAccess\WP\Libraries\Core\Service\Interfaces\InitServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServicesInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services\AdminMenu;
+use ArrayAccess\WP\Libraries\Core\Service\Services\Ajax;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Blocks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Database;
 use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
@@ -75,6 +77,7 @@ final class Services implements ServicesInterface
      */
     public const DEFAULT_SERVICES = [
         AdminMenu::class,
+        Ajax::class,
         Blocks::class,
         Database::class,
         DefaultAssets::class,
@@ -98,10 +101,22 @@ final class Services implements ServicesInterface
             }
             $this->coreService[$serviceId] = true;
         }
+        $this->initCore();
+    }
 
-        // init the default assets
-        $this->get(DefaultAssets::class)->init();
-        $this->get(Blocks::class)?->init();
+    /**
+     * Initialize core services
+     *
+     * @return void
+     */
+    private function initCore(): void
+    {
+        foreach ($this->coreService as $serviceId => $item) {
+            $service = $this->get($serviceId);
+            if ($service instanceof InitServiceInterface && !$service->hasInit()) {
+                $service->init();
+            }
+        }
     }
 
     /**
@@ -163,6 +178,7 @@ final class Services implements ServicesInterface
         ) {
             return false;
         }
+        // check first if argument is class name,
         if (is_object($service)) {
             $this->services[$serviceId] = $service;
             unset($this->queuedServices[$serviceId]);
@@ -186,6 +202,7 @@ final class Services implements ServicesInterface
         if (isset($this->coreService[$serviceId])) {
             return false;
         }
+
         // check first if argument is class name,
         // when the argument is an object ignore the string checking
         if (is_string($service)) {
@@ -194,6 +211,10 @@ final class Services implements ServicesInterface
                 return false;
             }
             $service = new $service($this);
+        }
+
+        if ($service instanceof InitServiceInterface && !$service->hasInit()) {
+            $service->init();
         }
 
         $this->services[$serviceId] = $service;
@@ -260,20 +281,26 @@ final class Services implements ServicesInterface
         if (!$serviceId) {
             return null;
         }
+        $service = null;
         // If service object, check if the service is in the services
         if (isset($this->services[$serviceId])) {
-            return $this->services[$serviceId];
-        }
-        // If service is in the queued services, create the service
-        if (isset($this->queuedServices[$serviceId])) {
-            $service = $this->queuedServices[$serviceId];
-            unset($this->queuedServices[$serviceId]);
-            if (is_string($service)) {
-                return $this->services[$serviceId] = new $service($this);
+            $service = $this->services[$serviceId];
+        } else {
+            // If service is in the queued services, create the service
+            if (isset($this->queuedServices[$serviceId])) {
+                $service = $this->queuedServices[$serviceId];
+                unset($this->queuedServices[$serviceId]);
+                if (is_string($service)) {
+                    $service = new $service($this);
+                    $this->services[$serviceId] = $service;
+                }
             }
         }
-        // If service is not in the services, return null
-        return null;
+        // init the service if it is an init service
+        if ($service instanceof InitServiceInterface && !$service->hasInit()) {
+            $service->init();
+        }
+        return $service;
     }
 
     /**

@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Abstracts;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
+use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use ReflectionClass;
 use ReflectionObject;
@@ -21,14 +22,17 @@ use function explode;
 use function force_balance_tags;
 use function in_array;
 use function is_array;
+use function is_bool;
 use function is_callable;
 use function is_iterable;
 use function is_null;
 use function is_numeric;
+use function is_scalar;
 use function is_string;
 use function sanitize_html_class;
 use function str_contains;
 use function strtolower;
+use function substr;
 
 /**
  * Abstract field class to create and manage fields for subclasses
@@ -231,7 +235,6 @@ abstract class AbstractField implements FieldInterface
                 return $this;
             }
         }
-
         if (in_array($attributeName, $this->disallowedAttributes, true)) {
             return $this;
         }
@@ -275,7 +278,33 @@ abstract class AbstractField implements FieldInterface
                 $value = array_map('sanitize_html_class', $value);
             }
         }
-
+        if ($attributeName === 'value') {
+            $value = $this->filterValue($value);
+        }
+        if (isset(HtmlAttributes::ATTRIBUTES_INTEGER_TYPES[$attributeName])
+            || isset(HtmlAttributes::ATTRIBUTES_POSITIVE_INTEGER_TYPES[$attributeName])
+        ) {
+            if (!is_numeric($value)) {
+                return $this;
+            }
+            $value = (int)$value;
+            if ($value < 0
+                && isset(HtmlAttributes::ATTRIBUTES_POSITIVE_INTEGER_TYPES[$attributeName])
+            ) {
+                // remove when zero or negative
+                unset($this->attributes[$attributeName]);
+                return $this;
+            }
+        }
+        if ($attributeName === 'accept'
+            && in_array($this->getTagName(), ['input', 'form'], true)
+        ) {
+            $value = Filter::filterAccept($value);
+            if (empty($value)) {
+                unset($this->attributes[$attributeName]);
+                return $this;
+            }
+        }
         $this->attributes[$attributeName] = $value;
         return $this;
     }
@@ -572,6 +601,20 @@ abstract class AbstractField implements FieldInterface
      */
     public function filterValue(mixed $value = null): mixed
     {
+        if (!is_scalar($value) || is_bool($value)) {
+            return $value;
+        }
+        $type = $this->getAttribute('type');
+        $maxLength = $this->getAttribute('maxlength');
+        if (is_numeric($maxLength)
+            && is_string($type)
+            && in_array(strtolower($type), ['input', 'textarea'])
+        ) {
+            $newValue = substr($value, 0, (int)$maxLength);
+            if ($newValue !== $value) {
+                return $newValue;
+            }
+        }
         return $value;
     }
 

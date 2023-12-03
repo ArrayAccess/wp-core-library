@@ -22,6 +22,9 @@ class Rest extends AbstractService
      */
     protected Endpoints $endpoints;
 
+    /**
+     * @inheritdoc
+     */
     protected function onConstruct(): void
     {
         $this->description = __('Service to handle REST API.', 'arrayaccess');

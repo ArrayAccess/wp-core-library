@@ -5,8 +5,10 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Sections;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Hidden;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Nonce;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldValuesInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FileFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldSetterInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
@@ -34,6 +36,9 @@ class Form extends AbstractField implements
     public const ENC_TYPE_MULTIPART_FORM_DATA = 'multipart/form-data';
     public const ENC_TYPE_TEXT_PLAIN = 'text/plain';
 
+    /**
+     * @var string[] list of valid enctype
+     */
     public const ENCODE_TYPE_LIST = [
         self::ENC_TYPE_APPLICATION_X_WWW_FORM_URLENCODED,
         self::ENC_TYPE_MULTIPART_FORM_DATA,
@@ -58,6 +63,30 @@ class Form extends AbstractField implements
         'label',
         'name', // form is not input type
     ];
+
+    /**
+     * @var bool enable nonce for form
+     */
+    private bool $enableNonce = false;
+
+    /**
+     * @return bool enable nonce for form
+     */
+    public function isEnableNonce(): bool
+    {
+        return $this->enableNonce;
+    }
+
+    /**
+     * Enable nonce for form
+     *
+     * @param bool $enableNonce
+     * @return void enable nonce for form
+     */
+    public function setEnableNonce(bool $enableNonce): void
+    {
+        $this->enableNonce = $enableNonce;
+    }
 
     /**
      * @inheritdoc
@@ -107,7 +136,9 @@ class Form extends AbstractField implements
     }
 
     /**
-     * Set enctype attribute
+     * Set enctype attribute, encrypt will remain the same if invalid
+     * and should be one of the ENCODE_TYPE_LIST.
+     * multipart/form-data is the enctype for file upload
      *
      * @param string $encType
      * @return $this
@@ -203,10 +234,19 @@ class Form extends AbstractField implements
     {
         $html = '';
         $increment = 0;
+        $enableNonce = $this->isEnableNonce();
+        $hasNonce = false;
         foreach ($this->getFields() as $field) {
             // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators
             if ($field == $this) {
                 continue;
+            }
+            if (!$hasNonce && $enableNonce) {
+                $hasNonce = $field instanceof Nonce;
+            }
+            if ($field instanceof FileFieldInterface) {
+                // set enctype to multipart/form-data if there is file field
+                $this->setEncType(self::ENC_TYPE_MULTIPART_FORM_DATA);
             }
             $field = clone $field;
             ++$increment;
@@ -223,7 +263,10 @@ class Form extends AbstractField implements
             $html .= $field->build();
             $html .= '</div>';
         }
-
+        // add nonce if not exist
+        if ($enableNonce && !$hasNonce) {
+            $html = (new Nonce())->build() . $html;
+        }
         $attributes = $this->getAttributes();
         $description = $this->getDescription();
         // description for form as form text / html

@@ -166,6 +166,17 @@ class Blocks extends AbstractService implements BlockServiceInterface
         return true;
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function hasInit(): bool
+    {
+        return $this->init;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function init() : void
     {
         if ($this->init) {

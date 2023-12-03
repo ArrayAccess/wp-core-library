@@ -29,6 +29,28 @@ class Radio extends AbstractField implements FormFieldTypeInterface
     protected ?string $staticType = 'radio';
 
     /**
+     * @var array|string[] The default disallowed attributes.
+     */
+    protected array $disallowedAttributes = [
+        'maxlength',
+        'minlength',
+        'pattern',
+        'placeholder',
+        'readonly',
+        'required',
+        'size',
+        'autocomplete',
+        'autofocus',
+        'list',
+        'multiple',
+        'step',
+        'max',
+        'min',
+        'cols',
+        'rows',
+    ];
+
+    /**
      * Set checked attribute
      *
      * @param bool $checked true to set checked attribute, false to remove

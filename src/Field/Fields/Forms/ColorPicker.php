@@ -149,6 +149,10 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         }
         return $value;
     }
+
+    /**
+     * @inheritdoc
+     */
     public function getAttributes(): array
     {
         $attributes = parent::getAttributes();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Service\Services;
 
 use ArrayAccess\WP\Libraries\Core\Service\Abstracts\AbstractService;
+use ArrayAccess\WP\Libraries\Core\Service\Interfaces\InitServiceInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services;
 use ArrayAccess\WP\Libraries\Core\Util\HighlightJS;
 use function add_action;
@@ -30,7 +31,7 @@ use function wp_style_is;
 /**
  * Service that help to register default assets.
  */
-final class DefaultAssets extends AbstractService
+final class DefaultAssets extends AbstractService implements InitServiceInterface
 {
     /**
      * @var string The service name.
@@ -136,6 +137,14 @@ final class DefaultAssets extends AbstractService
     public static function getInstance(): DefaultAssets
     {
         return self::$instance ??= new self(new Services());
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasInit(): bool
+    {
+        return $this->init;
     }
 
     /**

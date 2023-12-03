@@ -23,7 +23,7 @@ use function wp_doing_ajax;
 /**
  * Admin Ajax Helper
  */
-class Admin
+class AdminAjax
 {
     /**
      * @var JsonSenderInterface Json sender
@@ -71,6 +71,11 @@ class Admin
         $this->registerAjax();
     }
 
+    /**
+     * Do register ajax on wp_loaded
+     *
+     * @return void
+     */
     private function registerAjax(): void
     {
         $callback = function () use (&$callback) {
@@ -195,11 +200,39 @@ class Admin
     }
 
     /**
+     * Get action
+     *
+     * @param string $action
+     * @return bool Whether the action is registered.
+     */
+    public function hasAction(string $action): bool
+    {
+        return isset($this->handlers[$action]);
+    }
+
+    /**
+     * Get action
+     *
+     * @param HandlerInterface $handler
+     * @return bool
+     */
+    public function has(HandlerInterface $handler): bool
+    {
+        $action = $handler->getAction();
+        $priority = $handler->getPriority();
+        if (!isset($this->handlers[$action][$priority])) {
+            return false;
+        }
+        return in_array($handler, $this->handlers[$action][$priority], true);
+    }
+
+    /**
      * Add handler
+     *
      * @param HandlerInterface $handler
      * @return $this
      */
-    public function add(HandlerInterface $handler): Admin
+    public function add(HandlerInterface $handler): AdminAjax
     {
         $action = $handler->getAction();
         $this->handlers[$action][$handler->getPriority()][] = $handler;
@@ -208,10 +241,32 @@ class Admin
     }
 
     /**
+     * Remove action
+     *
+     * @param string $action
+     * @return $this
+     */
+    public function removeAction(string $action): AdminAjax
+    {
+        unset($this->handlers[$action]);
+        return $this;
+    }
+
+    /**
+     * Get action lists
+     *
+     * @return array<string> list of action
+     */
+    public function getActionLists() : array
+    {
+        return array_keys($this->handlers);
+    }
+
+    /**
      * @param HandlerInterface $handler
      * @return $this
      */
-    public function remove(HandlerInterface $handler): Admin
+    public function remove(HandlerInterface $handler): AdminAjax
     {
         $action = $handler->getAction();
         $priority = $handler->getPriority();

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Block\Interfaces;
 
-use ArrayAccess\WP\Libraries\Core\Service\Interfaces\ServiceInterface;
+use ArrayAccess\WP\Libraries\Core\Service\Interfaces\InitServiceInterface;
 
-interface BlockServiceInterface extends ServiceInterface
+interface BlockServiceInterface extends InitServiceInterface
 {
     /**
      * Initialize the service

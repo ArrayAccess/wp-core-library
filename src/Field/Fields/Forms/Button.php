@@ -38,6 +38,26 @@ class Button extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var array|string[] The default disallowed attributes.
+     */
+    protected array $disallowedAttributes = [
+        'maxlength',
+        'minlength',
+        'pattern',
+        'placeholder',
+        'readonly',
+        'required',
+        'size',
+        'autocomplete',
+        'autofocus',
+        'list',
+        'multiple',
+        'step',
+        'max',
+        'min',
+    ];
+
+    /**
      * @param string $text button text, support html
      *
      * @return $this

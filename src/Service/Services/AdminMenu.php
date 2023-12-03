@@ -19,6 +19,9 @@ use Throwable;
 
 class AdminMenu extends AbstractService
 {
+    /**
+     * @var string $serviceName Service name.
+     */
     protected string $serviceName = 'adminMenu';
 
     /**

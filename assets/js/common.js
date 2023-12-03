@@ -176,6 +176,14 @@
                     return;
                 }
 
+                let maxLength = _this.maxLength || 0;
+                if (typeof maxLength !== 'number') {
+                    maxLength = 0;
+                }
+                if (maxLength < 0) {
+                    maxLength = 0;
+                }
+
                 const getValue = (el) => isInputForm(el) ? el.value : el.textContent;
                 const attr = (e, _default) => _this.getAttribute(e) || _default;
                 const rect = _this.getBoundingClientRect();
@@ -243,6 +251,11 @@
                     // noinspection JSUnresolvedReference
                     const hl = (editor) => {
                         if (!isReadOnly) {
+                            let content = editor.textContent;
+                            if (maxLength > 0 && content.length > maxLength) {
+                                content = content.substring(0, maxLength);
+                                editor.textContent = content;
+                            }
                             setValue(_this, editor);
                             if (setAttributes) {
                                 setAttributes({content: editor.textContent});

@@ -335,6 +335,12 @@ class HtmlAttributes
         return self::HTML_ATTRIBUTES[strtolower(trim($attribute))]??$attribute;
     }
 
+    /**
+     * Build attributes
+     *
+     * @param array $attributes
+     * @return string
+     */
     public static function buildAttributes(array $attributes) : string
     {
         return implode(' ', self::buildAttributesArray($attributes));

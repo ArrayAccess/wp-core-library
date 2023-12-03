@@ -9,6 +9,11 @@ use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function esc_html;
 use function force_balance_tags;
 use function func_num_args;
+use function in_array;
+use function is_float;
+use function is_int;
+use function is_scalar;
+use function is_string;
 use function wp_kses_post;
 
 /**
@@ -27,9 +32,9 @@ class Select extends AbstractField implements FormFieldTypeInterface
     protected array $options = [];
 
     /**
-     * @var ?string The selected value, if null, the first option will be selected
+     * @var string[] The selected value, if null, the first option will be selected
      */
-    protected ?string $selected = null;
+    protected array $selected = [];
 
     /**
      * The info of select field (the name info of the field)
@@ -61,6 +66,11 @@ class Select extends AbstractField implements FormFieldTypeInterface
     ];
 
     /**
+     * @var bool true if multiple
+     */
+    protected bool $multiple = false;
+
+    /**
      * @param string|null $selected The selected value, if null, the first option will be selected
      */
     public function __construct(?string $name = null, ?string $selected = null)
@@ -70,24 +80,75 @@ class Select extends AbstractField implements FormFieldTypeInterface
     }
 
     /**
-     * Set options of select field.
-     * @param ?string $selected
+     * @param bool $multiple
      * @return $this
      */
-    public function setSelected(?string $selected): static
+    public function setMultiple(bool $multiple): static
     {
-        $this->selected = $selected;
+        $this->multiple = $multiple;
+        return $this;
+    }
+
+    /**
+     * @return bool $multiple true if multiple
+     */
+    public function isMultiple(): bool
+    {
+        return $this->multiple;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAttribute(string $attributeName, mixed $value): static
+    {
+        $attributeName = HtmlAttributes::filterAttributeName($attributeName);
+        if ($attributeName === 'value'
+            || $attributeName === 'selected'
+        ) {
+            $this->setSelected((string) $value);
+            return $this;
+        }
+
+        if ($attributeName === 'multiple') {
+            $this->setMultiple((bool) $value);
+            return $this;
+        }
+
+        return parent::setAttribute($attributeName, $value);
+    }
+
+    /**
+     * Set options of select field.
+     * @param string ...$selected
+     * @return $this
+     */
+    public function setSelected(string|int|float ...$selected): static
+    {
+        $this->selected = [];
+        foreach ($selected as $value) {
+            $this->selected[] = (string) $value;
+        }
         return $this;
     }
 
     /**
      * Get options of select field.
      *
-     * @return string|null
+     * @return array<string> The selected value.
      */
-    public function getSelected(): ?string
+    public function getSelected(): array
     {
         return $this->selected;
+    }
+
+    /**
+     * @return $this clear selected
+     */
+    public function clearSelected(): static
+    {
+        $this->selected = [];
+        return $this;
     }
 
     /**
@@ -201,6 +262,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
     public function build(?bool $inline = null): string
     {
         $inline ??= $this->isInline();
+        $isMultiple = $this->isMultiple();
         $html = '';
         $info = $this->getInfo();
         $containSelected = false;
@@ -211,12 +273,13 @@ class Select extends AbstractField implements FormFieldTypeInterface
             /** @noinspection PhpCastIsUnnecessaryInspection */
             $value = (string) $value;
             $html .= '<option value="' . esc_attr($value) . '"';
-            if ($selected === $value) {
+            if (in_array($value, $selected, true)) {
                 $html .= ' selected';
                 $containSelected = true;
             }
             $html .= '>' . esc_html($label) . '</option>';
         }
+
         if ($info) {
             $htmlInfo = '<option value=""';
             if (!$containSelected) {
@@ -229,6 +292,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
             $html = $htmlInfo . $html;
         }
         $attr = $this->getAttributes();
+        $attr['multiple'] = $isMultiple;
         $attr['html'] = $html;
         $html = HtmlAttributes::createHtmlTag($this->getTagName(), $attr);
         $label = $this->getLabel();
@@ -263,6 +327,22 @@ class Select extends AbstractField implements FormFieldTypeInterface
         if ($allowNull && $value === null) {
             return true;
         }
+        if ($this->isMultiple()) {
+            // if the type is string|float|int and is in option, check has options.
+            if (is_string($value) || is_float($value) || is_int($value)) {
+                return $this->hasOption($value);
+            }
+            if (!is_array($value)) {
+                return false;
+            }
+            foreach ($value as $v) {
+                if (!is_scalar($v) || !$this->isValidValue($v, false)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         // if the type is string|float|int and is in option, check has options.
         if (is_string($value) || is_float($value) || is_int($value)) {
             return $this->hasOption($value);
@@ -273,8 +353,12 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * @inheritdoc
      */
-    public function getValue(): ?string
+    public function getValue(): string|array|null
     {
-        return $this->getSelected();
+        $selected = $this->getSelected();
+        if (!$this->isMultiple()) {
+            return count($selected) > 0 ? (string) reset($selected) : null;
+        }
+        return $selected === [] ? null : $selected;
     }
 }

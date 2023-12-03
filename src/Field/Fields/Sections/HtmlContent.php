@@ -32,6 +32,15 @@ class HtmlContent extends AbstractField implements
     ];
 
     /**
+     * @param ?string $name html content
+     */
+    public function __construct(?string $name = null)
+    {
+        parent::__construct();
+        $this->setContent($name ?? '');
+    }
+
+    /**
      * @return bool form is inline
      */
     public function isInline(): bool

@@ -16,10 +16,14 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInte
 use ArrayAccess\WP\Libraries\Core\Field\Traits\AppendedValuesTrait;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+use ArrayAccess\WP\Libraries\Core\Util\HttpRequest\Server;
 use function force_balance_tags;
 use function is_string;
+use function remove_query_arg;
+use function set_url_scheme;
 use function spl_object_hash;
 use function strtolower;
+use function wp_removable_query_args;
 
 /**
  * Form wrapper
@@ -298,6 +302,19 @@ class Form extends AbstractField implements
             $html = (new Nonce())->build() . $html;
         }
         $attributes = $this->getAttributes();
+        $attributes['action'] = $attributes['action'] ?? null;
+        if ($attributes['action'] === null) {
+            $scheme = is_ssl() ? 'https://' : 'http://';
+            $host = Server::string('HTTP_HOST');
+            $requestUri = Server::string('REQUEST_URI');
+            $attributes['action'] = set_url_scheme(
+                $scheme
+                . $host
+                . $requestUri
+            );
+            $removableQueryArgs = wp_removable_query_args();
+            $attributes['action'] = remove_query_arg($removableQueryArgs, $attributes['action']);
+        }
         $description = $this->getDescription();
         // description for form as form text / html
         if ($description !== null) {

@@ -9,6 +9,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Nonce;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldValuesInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FileFieldInterface;
+use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldSetterInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
@@ -68,6 +69,30 @@ class Form extends AbstractField implements
      * @var bool enable nonce for form
      */
     private bool $enableNonce = false;
+
+    /**
+     * @var bool hide the empty sections
+     */
+    private bool $hideEmptySection = false;
+
+    /**
+     * @return bool hide the empty sections
+     */
+    public function isHideEmptySection(): bool
+    {
+        return $this->hideEmptySection;
+    }
+
+    /**
+     * Hide the empty sections
+     *
+     * @param bool $hideEmptySection
+     * @return void
+     */
+    public function setHideEmptySection(bool $hideEmptySection): void
+    {
+        $this->hideEmptySection = $hideEmptySection;
+    }
 
     /**
      * @return bool enable nonce for form
@@ -236,16 +261,21 @@ class Form extends AbstractField implements
         $increment = 0;
         $enableNonce = $this->isEnableNonce();
         $hasNonce = false;
+        $hideEmpty = $this->isHideEmptySection();
         foreach ($this->getFields() as $field) {
             // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators
             if ($field == $this) {
                 continue;
             }
+            if ($hideEmpty && $field instanceof MultipleFieldInterface && $field->count() === 0) {
+                continue;
+            }
+
             if (!$hasNonce && $enableNonce) {
                 $hasNonce = $field instanceof Nonce;
             }
             if ($field instanceof FileFieldInterface) {
-                // set enctype to multipart/form-data if there is file field
+                // set enctype to multipart/form-data if there is the file field
                 $this->setEncType(self::ENC_TYPE_MULTIPART_FORM_DATA);
             }
             $field = clone $field;

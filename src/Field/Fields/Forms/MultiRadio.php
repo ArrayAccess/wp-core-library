@@ -10,7 +10,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use function spl_object_hash;
 
-class MultiImageRadio extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
+class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
@@ -18,38 +18,40 @@ class MultiImageRadio extends AbstractField implements MultipleFieldInterface, F
 
     /**
      * @param string|int|float $value
-     * @param string $imageUrl The image url.
      * @return ?FieldInterface
      */
-    public function add(string|int|float $value, string $imageUrl): ?FieldInterface
+    public function add(string|int|float $value): ?FieldInterface
     {
-        $radio = new ImageRadio($this->getName(), $imageUrl);
+        $radio = new Radio($this->getName());
         $radio->setValue($value);
+        $this->remove($value);
         return $this->addValue($radio);
     }
 
     /**
      * Remove field
      *
-     * @param FieldInterface|string $fieldOrImageUrl
+     * @param FieldInterface|mixed $nameOrValue
      * @return bool true if removed, false if not
      */
-    public function remove(FieldInterface|string $fieldOrImageUrl): bool
+    public function remove(mixed $nameOrValue): bool
     {
-        $result = false;
-        if ($fieldOrImageUrl instanceof FieldInterface) {
-            $result = $this->removeField($fieldOrImageUrl);
+        $removed = false;
+        if ($nameOrValue instanceof FieldInterface) {
+            $removed = $this->removeField($nameOrValue);
+            $nameOrValue = $nameOrValue->getAttribute('value');
         }
         foreach ($this->getFields() as $field) {
-            if (!$field instanceof ImageRadio) {
+            if (!$field instanceof Radio) {
                 $this->removeField($field);
                 continue;
             }
-            if ($field->getImageUrl() === $fieldOrImageUrl) {
-                $result = $this->removeField($field)?:$result;
+            $value = $field->getValue();
+            if ($value === $nameOrValue) {
+                $removed = $this->removeField($field)?:$removed;
             }
         }
-        return $result;
+        return $removed;
     }
 
     /**

@@ -214,4 +214,12 @@ trait MultipleFieldTrait
         }
         return $this;
     }
+
+    /**
+     * @return int count of fields
+     */
+    public function count() : int
+    {
+        return count($this->fields);
+    }
 }

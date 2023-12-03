@@ -10,45 +10,46 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use function spl_object_hash;
 
-class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
+class MultiCheckbox extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
     }
 
     /**
+     * Add checkbox
+     *
      * @param string|int|float $name
      * @param string|int|float $value
-     * @param string $imageUrl The image url.
      * @return ?FieldInterface
      */
-    public function add(string|int|float $name, string|int|float $value, string $imageUrl): ?FieldInterface
+    public function add(string|int|float $name, string|int|float $value): ?FieldInterface
     {
         $name = (string)$name;
         $inputName = $this->getName() . '[' . $name . ']';
-        $checkbox = new ImageCheckbox($inputName);
-        $checkbox->setImageUrl($imageUrl);
+        $checkbox = new Checkbox($inputName);
         $checkbox->setValue($value);
         return $this->addValue($checkbox);
     }
 
     /**
-     * Remove field
-     *
-     * @param FieldInterface|string $fieldOrImageUrl
+     * @param FieldInterface|string $name
      * @return bool true if removed, false if not
      */
-    public function remove(FieldInterface|string $fieldOrImageUrl): bool
+    public function remove(FieldInterface|string $name): bool
     {
-        if ($fieldOrImageUrl instanceof FieldInterface) {
-            return $this->removeField($fieldOrImageUrl);
+        if ($name instanceof FieldInterface) {
+            return $this->removeField($name);
         }
+        $theName = $this->getName() . '[' . $name . ']';
         foreach ($this->getFields() as $field) {
-            if (!$field instanceof ImageCheckbox) {
+            if (!$field instanceof Checkbox) {
                 $this->removeField($field);
                 continue;
             }
-            if ($field->getImageUrl() === $fieldOrImageUrl) {
+            if ($field->getName() === $theName
+                || $field->getName() === $name
+            ) {
                 return $this->removeField($field);
             }
         }

@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Field\Interfaces;
 
-interface MultipleFieldInterface extends FieldInterface
+use Countable;
+
+interface MultipleFieldInterface extends FieldInterface, Countable
 {
     /**
      * Clear all fields

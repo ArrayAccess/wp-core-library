@@ -34,6 +34,8 @@ class JsonFormatter implements JsonFormatterInterface
     }
 
     /**
+     * Format error response
+     *
      * @param JsonResponseInterface|Throwable $response
      * @return array{
      *     error: array{

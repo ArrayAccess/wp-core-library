@@ -347,30 +347,36 @@ class HtmlAttributes
     }
 
     /**
+     * Validate boolean value
+     *
+     * @param mixed $value
+     * @return bool returning true if value is boolean enabled
+     */
+    public static function isBooleanEnabled(mixed $value): bool
+    {
+        $value = is_string($value) ? strtolower(trim($value)) : $value;
+        return (
+            $value === true
+            || $value === '1'
+            || $value === 1
+            || $value === 'true'
+            || $value === 'yes'
+        );
+    }
+
+    /**
      * @param string $attributeName
      * @param $value
      * @return bool returning true if value is boolean attribute enabled
      */
     public static function isBooleanAttributeEnabled(string $attributeName, $value): bool
     {
-        $attributeName = strtolower(trim($attributeName));
+        $attributeName = self::filterAttributeName($attributeName);
+
         if (!isset(self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$attributeName])) {
             return false;
         }
-        return (
-            $value === true
-            || $value === '1'
-            || $value === 1
-            || (
-                is_string($value)
-                && (
-                    $value === ''
-                    || strtolower(trim($value)) === 'true'
-                    || strtolower(trim($value)) === 'yes'
-                    || strtolower(trim($value)) === $attributeName
-                )
-            )
-        );
+        return $attributeName === $value || self::isBooleanEnabled($value);
     }
 
     /**
@@ -417,7 +423,7 @@ class HtmlAttributes
                 }
                 $value = self::ATTRIBUTES_BOOLEAN_TRUE_TYPES[$lowerKey];
             } else {
-                $value = $value ? 'true' : 'false';
+                $value = $value ? '1' : '0';
             }
         } elseif ($value instanceof Stringable || is_scalar($value)) {
             // if it was a float & more than PHP_INT_MAX commonly contain E,
@@ -531,6 +537,10 @@ class HtmlAttributes
         // wrapper tag
         $wrapper = $attributes['wrapper']??null;
         $html = $attributes['html']??'';
+        if ($tagName === 'option' && is_scalar($attributes['label'])) {
+            $html = $html?:$attributes['label'];
+            unset($attributes['label']);
+        }
         unset($attributes['html'], $attributes['wrapper']);
         // especial textarea tag
         if ($tag === 'textarea') {

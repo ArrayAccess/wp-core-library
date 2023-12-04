@@ -76,11 +76,19 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                 'media' => 'all',
             ],
             'arrayaccess-editor' => [
-                'src' => '{{dist_url}}/highlightjs/highlight.bundle.min.css',
+                'src' => '{{dist_url}}/vendor/highlightjs/highlight.bundle.min.css',
                 'deps' => [
                     'arrayaccess-common'
                 ],
                 'ver' => HighlightJS::VERSION,
+                'media' => 'all',
+            ],
+            'selectize' => [
+                'src' => '{{dist_url}}/vendor/selectize/selectize.default.min.css',
+                'deps' => [
+                    'arrayaccess-common',
+                ],
+                'ver' => '0.15.2',
                 'media' => 'all',
             ],
         ],
@@ -110,7 +118,15 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                 'ver' => '1.0.0',
                 'in_footer' => false,
                 // 'type' => 'module'
-            ]
+            ],
+            'selectize' => [
+                'src' => '{{dist_url}}/vendor/selectize/selectize.min.js',
+                'deps' => [
+                    'arrayaccess-common'
+                ],
+                'ver' => '0.15.2',
+                'in_footer' => true,
+            ],
         ],
     ];
 

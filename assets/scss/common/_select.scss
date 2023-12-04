@@ -1,0 +1,14 @@
+select[data-selectize="true"] {
+    display: block;
+    width: var(--aa-base-block-width);
+    margin: var(--aa-base-block-margin);
+    max-width: 100%;
+}
+
+.selectize-control {
+    z-index: 5;
+    .selectize-input {
+        width: var(--aa-base-block-width);
+        margin: var(--aa-base-block-margin);
+    }
+}

@@ -12,7 +12,8 @@
     --aa-minimize-bg-color: #{$m-pastel-orange};
     --aa-maximize-bg-color: #{$m-malachite};
     --aa-close-bg-color: #{$m-sunset-orange};
-
+    --aa-base-block-width: calc(100% - .2rem);
+    --aa-base-block-margin: .5rem auto;
     &,
     &::before,
     &::after,

@@ -370,6 +370,19 @@
                     .addClass('aa-wp-color-picker-ready');
             });
         }
+        if ($?.fn?.selectize) {
+            $('select[data-selectize=true]').each(function () {
+                const _this = $(this);
+                if (typeof _this.selectize !== "function") {
+                    return;
+                }
+                let options = _this.data('selectize-options');
+                if (!options || typeof options !== 'object') {
+                    options = {};
+                }
+                _this.trigger('selectize-ready', [_this, _this.selectize(options)]);
+            });
+        }
         if ($) {
             $(document).on('click', '.aa-editor-header-btn span[class^=aa-]',  function (e)  {
                 const editor = $(this).closest('.aa-editor-wrap');

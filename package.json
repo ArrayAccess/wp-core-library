@@ -32,6 +32,7 @@
     },
     "devDependencies": {
         "@highlightjs/cdn-assets": "^11.9.0",
+        "@selectize/selectize": "^0.15.2",
         "codejar": "^4.2.0",
         "codejar-linenumbers": "^1.0.1",
         "copyfiles": "^2.4.1",

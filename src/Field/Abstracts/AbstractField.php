@@ -575,10 +575,21 @@ abstract class AbstractField implements FieldInterface
             $isAttribute = $key === 'attributes';
             // Redact the options property.
             if ($key === 'options' && is_array($value)) {
-                $inc = 0;
                 $val = [];
-                foreach ($value as $v) {
-                    $val['<redacted>:' . $inc++] = $v;
+                foreach ($value as $k => $v) {
+                    if (is_array($v)) {
+                        foreach ($v as $optionsKey => $optionsValue) {
+                            if ($optionsKey === 'value'
+                                || str_starts_with($optionsKey, 'data-')
+                                || str_contains($optionsKey, 'password')
+                                || str_contains($optionsKey, 'key')
+                            ) {
+                                $optionsValue = '<redacted>';
+                            }
+                            $v[$optionsKey] = $optionsValue;
+                        }
+                        $val[$k] = $v;
+                    }
                 }
                 $value = $val;
             }

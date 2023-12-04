@@ -11,8 +11,8 @@
         &,
         &:focus {
             outline: none;
-            width: 98%;
-            margin: .5rem auto;
+            width: var(--aa-base-block-width);
+            margin: var(--aa-base-block-margin);
             display: block;
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -30,7 +30,7 @@
  */
 .aa-editor-wrap {
     position: relative;
-
+    z-index: 2;
     // Preload editor
     pre.aa-code-editor,
     textarea[data-code-editor] {

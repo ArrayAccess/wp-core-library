@@ -451,9 +451,11 @@ class Builder
                 if (empty($options)) {
                     return null;
                 }
+                // add selectize
+                $field->setAttribute('data-selectize', 'true');
                 $selectedVal = is_array($value) ? $value : [];
                 /** @noinspection DuplicatedCode */
-                foreach ($options as $optionDefinition) {
+                foreach ($options as $key => $optionDefinition) {
                     if (!is_array($optionDefinition)) {
                         if (!is_scalar($optionDefinition)) {
                             // invalid! stop!
@@ -470,8 +472,11 @@ class Builder
                             'value' => (string) $optionDefinition[0],
                             'selected' => null
                         ];
+                    } elseif (is_string($key)) {
+                        $optionDefinition['label'] ??= $key;
+                        $optionDefinition['value'] ??= $key;
                     }
-                    $optName = $optionDefinition['label']??null;
+                    $optName  = $optionDefinition['label']??null;
                     $optValue = $optionDefinition['value']??null;
                     if (!is_string($optName) || !is_scalar($optValue)) {
                         // invalid! stop!
@@ -479,13 +484,12 @@ class Builder
                     }
                     $optValue = (string) $optValue;
                     $optionDefinition['selected'] ??= $selected[$optValue]??false;
-                    $field->addOption($optValue, $optName);
+                    $field->addOption($optValue, $optName, $optionDefinition);
                     if (in_array($optValue, $selectedVal, true)) {
                         continue;
                     }
                     $isSelected = ($value !== null || $value === $optValue)
-                        || HtmlAttributes::isBooleanAttributeEnabled(
-                            'selected',
+                        || HtmlAttributes::isBooleanEnabled(
                             $optionDefinition['selected']
                         );
                     if ($isSelected) {
@@ -583,12 +587,16 @@ class Builder
                 $field->setAttribute('value', $value);
             }
         }
-
         $field
             ->setLabel($title)
             ->setDescription($description)
-            ->setAttributes($definition)
             ->setAttribute('value', $value);
+        foreach ($definition as $key => $attr) {
+            if (!is_string($key)) {
+                continue;
+            }
+            $field->setAttribute($key, $definition);
+        }
         if (!$field instanceof UnsupportedNameAttributeInterface) {
             $field->setName($name);
         }

@@ -5,17 +5,24 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
+use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+use function array_filter;
+use function array_values;
 use function esc_html;
 use function force_balance_tags;
 use function func_num_args;
-use function in_array;
+use function is_array;
 use function is_float;
 use function is_int;
+use function is_iterable;
 use function is_scalar;
 use function is_string;
 use function preg_match;
 use function wp_kses_post;
+use function wp_script_is;
+use function wp_style_is;
+use const ARRAY_FILTER_USE_KEY;
 
 /**
  * Single Select field
@@ -28,7 +35,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
     protected string $tagName = 'select';
 
     /**
-     * @var array<string, string> key is the value and value is the label
+     * @var array<scalar, array> key is the value and value is the label
      */
     protected array $options = [];
 
@@ -74,10 +81,10 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * @param string|null $selected The selected value, if null, the first option will be selected
      */
-    public function __construct(?string $name = null, ?string $selected = null)
+    public function __construct(?string $name = null, ...$selected)
     {
         parent::__construct($name);
-        $this->setSelected($selected);
+        $this->setSelected(...array_values($selected));
     }
 
     /**
@@ -101,13 +108,27 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * @inheritdoc
      */
+    public function setAttributes(array $attributes): static
+    {
+        if ($this->attributes === [] && !isset($attributes['data-selectize'])) {
+            $attributes['data-selectize'] = 'true';
+        }
+        return parent::setAttributes($attributes);
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function setAttribute(string $attributeName, mixed $value): static
     {
         $attributeName = HtmlAttributes::filterAttributeName($attributeName);
-        if ($attributeName === 'value'
-            || $attributeName === 'selected'
-        ) {
-            $this->setSelected((string) $value);
+        if ($attributeName === 'selected') {
+            $value = is_array($value) ? array_values($value) : (
+                is_iterable($value)
+                    ? iterator_to_array($value)
+                    : [$value]
+            );
+            $this->setSelected(...array_values($value));
             return $this;
         }
 
@@ -120,27 +141,45 @@ class Select extends AbstractField implements FormFieldTypeInterface
     }
 
     /**
-     * Set options of select field.
-     * @param string ...$selected
+     * @param mixed $selected
      * @return $this
      */
-    public function setSelected(string|int|float ...$selected): static
+    public function addSelected(mixed $selected): static
     {
-        $this->selected = [];
-        foreach ($selected as $value) {
-            $this->selected[] = (string) $value;
+        if (is_scalar($selected) && isset($this->options[(string) $selected])) {
+            $selected = (string) $selected;
+            $this->selected[$selected] = true;
+        } elseif (is_array($selected) || is_iterable($selected)) {
+            foreach ($selected as $value) {
+                $this->addSelected($value);
+            }
         }
         return $this;
     }
 
     /**
+     * Set options of select field.
+     * @param string ...$selected
+     * @return $this
+     */
+    public function setSelected(mixed ...$selected): static
+    {
+        $this->selected = [];
+        return $this->addSelected(array_values($selected));
+    }
+
+    /**
      * Get options of select field.
      *
-     * @return array<string> The selected value.
+     * @return array<scalar, array> The selected value.
      */
     public function getSelected(): array
     {
-        return $this->selected;
+        return array_filter(
+            $this->getOptions(),
+            fn ($e) => isset($this->selected[$e]),
+            ARRAY_FILTER_USE_KEY
+        );
     }
 
     /**
@@ -200,12 +239,19 @@ class Select extends AbstractField implements FormFieldTypeInterface
      *
      * @param string|int|float $value
      * @param string $label
+     * @param array $attributes
      * @return $this
      */
-    public function addOption(string|int|float $value, string $label): static
+    public function addOption(string|int|float $value, string $label, array $attributes = []): static
     {
         $value = (string) $value;
-        $this->options[$value] = $label;
+        $attributes['label'] = $label;
+        $this->options[$value] = $attributes;
+        $selected = HtmlAttributes::isBooleanEnabled($attributes['selected']??false);
+        unset($attributes['selected'], $attributes['value']);
+        if ($selected) {
+            $this->addSelected($value);
+        }
         return $this;
     }
 
@@ -215,8 +261,11 @@ class Select extends AbstractField implements FormFieldTypeInterface
      * @param string|int|float $value
      * @return bool
      */
-    public function hasOption(string|int|float $value): bool
+    public function hasOption(mixed $value): bool
     {
+        if (!is_scalar($value)) {
+            return false;
+        }
         $value = (string) $value;
         return isset($this->options[$value]);
     }
@@ -224,13 +273,16 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * Remove an option from select field.
      *
-     * @param string|int|float $value
+     * @param mixed $value
      * @return $this
      */
-    public function removeOption(string|int|float $value): static
+    public function removeOption(mixed $value): static
     {
+        if (!is_scalar($value)) {
+            return $this;
+        }
         $value = (string) $value;
-        unset($this->options[$value]);
+        unset($this->options[$value], $this->selected[$value]);
         return $this;
     }
 
@@ -248,7 +300,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * Get all options.
      *
-     * @return array<string, string> key is the value and value is the label
+     * @return array<scalar, array> key is the value and value is the label
      */
     public function getOptions(): array
     {
@@ -268,31 +320,36 @@ class Select extends AbstractField implements FormFieldTypeInterface
         $info = $this->getInfo();
         $containSelected = false;
         $selected = $this->getSelected();
-        foreach ($this->getOptions() as $value => $label) {
-            /** @noinspection PhpCastIsUnnecessaryInspection */
-            $label = (string) $label;
-            /** @noinspection PhpCastIsUnnecessaryInspection */
-            $value = (string) $value;
-            $html .= '<option value="' . esc_attr($value) . '"';
-            if (in_array($value, $selected, true)) {
-                $html .= ' selected';
-                $containSelected = true;
+        foreach ($this->getOptions() as $value => $attr) {
+            $attr['label'] = (string) ($attr['label']??$value);
+            $attr['value'] = (string) $value;
+            $attr['selected'] = isset($selected[$value]);
+            $containSelected = $containSelected || $attr['selected'];
+            if (!$attr['selected']) {
+                unset($attr['selected']);
             }
-            $html .= '>' . esc_html($label) . '</option>';
+            $html .= HtmlAttributes::createHtmlTag('option', $attr);
         }
 
         if ($info) {
-            $htmlInfo = '<option value=""';
+            $attr = [
+                'value' => '',
+            ];
             if (!$containSelected) {
-                $htmlInfo .= ' selected';
+                $attr['selected'] = true;
             }
             if (!$this->isInfoSelectable()) {
-                $htmlInfo .= ' disabled';
+                $attr['disabled'] = true;
             }
-            $htmlInfo .= '>' . esc_html($info) . '</option>';
-            $html = $htmlInfo . $html;
+            $html = HtmlAttributes::createHtmlTag('option', $attr) . $html;
         }
         $attr = $this->getAttributes();
+        $attr['placeholder'] ??= $info??_n(
+            'Select an option ...',
+            'Select options ...',
+            $isMultiple ? 2 : 1,
+            'arrayaccess'
+        );
         $attr['multiple'] = $isMultiple;
         $name = $this->getName();
         if (!is_string($name)) {
@@ -365,6 +422,23 @@ class Select extends AbstractField implements FormFieldTypeInterface
             return $this->hasOption($value);
         }
         return false;
+    }
+
+    protected function doEnqueueAssets(): static
+    {
+        if ($this->getAttribute('data-selectize') !== 'true') {
+            return $this;
+        }
+
+        if (!wp_script_is('selectize')
+            || !wp_style_is('selectize')
+        ) {
+            $defaultAssets = DefaultAssets::getInstance();
+            $defaultAssets->init();
+            $defaultAssets->enqueueAsset('selectize');
+        }
+
+        return $this;
     }
 
     /**

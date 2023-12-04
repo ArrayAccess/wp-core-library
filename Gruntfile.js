@@ -38,8 +38,62 @@
     module.exports = (grunt) => {
         // noinspection JSUnresolvedReference
         grunt.initConfig({
-            pkg    : grunt.file.readJSON('package.json'),
-            concat : {
+            pkg  : grunt.file.readJSON('package.json'),
+            copy : {
+                // copy assets/js
+                js: {
+                    files: [
+                        {
+                            expand : true,
+                            cwd    : 'assets/js',
+                            src    : ['**/*.js'],
+                            dest   : 'dist/js',
+                            filter : 'isFile'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'assets/blocks',
+                            src    : ['**/*.js'],
+                            dest   : 'dist/blocks',
+                            filter : 'isFile'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'assets/js',
+                            src    : ['**/*.min.js'],
+                            dest   : 'dist/js',
+                            filter : 'isFile'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'node_modules/@selectize/selectize/dist/js',
+                            src    : ['**/*.js', '!**/*.min.js'],
+                            dest   : 'dist/vendor/selectize',
+                            filter : 'isFile'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'node_modules/@selectize/selectize/dist/css',
+                            src    : ['selectize.default.css'],
+                            dest   : 'dist/vendor/selectize',
+                            filter : 'isFile'
+                        }
+                    ]
+                },
+                // copy highlightjs image & font assets
+                highlightjs: {
+                    files: [
+                        {
+                            expand : true,
+                            cwd    : 'node_modules/@highlightjs/cdn-assets/styles',
+                            src    : ['*.png', '*.gif', '*.jpg', '*.jpeg', '*.svg', '*.woff', '*.woff2', '*.ttf', '*.eot'],
+                            dest   : 'dist/vendor/highlightjs',
+                            filter : 'isFile'
+                        }
+                    ]
+                }
+            },
+            concat: {
                 highlightjsCSS: {
                     options: {
                         process: function(src, filepath) {
@@ -119,7 +173,7 @@
                         }
                     },
                     files: {
-                        "dist/highlightjs/highlight.bundle.css": [
+                        "dist/vendor/highlightjs/highlight.bundle.css": [
                             "node_modules/@highlightjs/cdn-assets/styles/default.css",
                             "node_modules/@highlightjs/cdn-assets/styles/*.css",
                             "!node_modules/@highlightjs/cdn-assets/styles/*.min.css"
@@ -140,11 +194,11 @@
                         "node_modules/@highlightjs/cdn-assets/highlight.js",
                         "node_modules/@highlightjs/cdn-assets/languages/*.js"
                     ],
-                    dest: "dist/highlightjs/highlight.bundle.js"
+                    dest: "dist/vendor/highlightjs/highlight.bundle.js"
                 },
                 codejar: {
                     files: {
-                        "dist/codejar/codejar.bundle.css": [
+                        "dist/vendor/codejar/codejar.bundle.css": [
                             "node_modules/codejar-linenumbers/js/codejar-linenumbers.css"
                         ]
                     }
@@ -167,7 +221,7 @@
                     src: [
                         "node_modules/codejar/dist/codejar.js",
                         "node_modules/codejar-linenumbers/js/codejar-linenumbers.js",
-                        "dist/highlightjs/highlight.bundle.js"
+                        "dist/vendor/highlightjs/highlight.bundle.js"
                     ],
                     dest: "dist/js/editor.bundle.js"
                 }
@@ -192,6 +246,13 @@
                             src    : ["**/*.js", "!**/*.min.js"],
                             dest   : 'dist/blocks',
                             ext    : '.min.js'
+                        },
+                        {
+                            expand : true,
+                            cwd    : 'dist/vendor/selectize',
+                            src    : ["**/*.js", "!**/*.min.js"],
+                            dest   : 'dist/vendor/selectize',
+                            ext    : '.min.js'
                         }
                     ]
                 },
@@ -202,8 +263,8 @@
                     },
                     files: [
                         {
-                            src  : "dist/highlightjs/highlight.bundle.js",
-                            dest : 'dist/highlightjs/highlight.bundle.min.js'
+                            src  : "dist/vendor/highlightjs/highlight.bundle.js",
+                            dest : 'dist/vendor/highlightjs/highlight.bundle.min.js'
                         }
                     ]
                 },
@@ -215,7 +276,7 @@
                     files: [
                         {
                             src  : "node_modules/codejar/dist/codejar.js",
-                            dest : 'dist/codejar/codejar.bundle.min.js'
+                            dest : 'dist/vendor/codejar/codejar.bundle.min.js'
                         }
                     ]
                 },
@@ -240,16 +301,24 @@
                             options: {
                                 keepSpecialComments: 0
                             },
-                            src  : "dist/highlightjs/highlight.bundle.css",
-                            dest : 'dist/highlightjs/highlight.bundle.min.css'
+                            src  : "dist/vendor/highlightjs/highlight.bundle.css",
+                            dest : 'dist/vendor/highlightjs/highlight.bundle.min.css'
                         }
                     ]
                 },
                 codejar: {
                     files: [
                         {
-                            src  : "dist/codejar/codejar.bundle.css",
-                            dest : 'dist/codejar/codejar.bundle.min.css'
+                            src  : "dist/vendor/codejar/codejar.bundle.css",
+                            dest : 'dist/vendor/codejar/codejar.bundle.min.css'
+                        }
+                    ]
+                },
+                selectize: {
+                    files: [
+                        {
+                            src  : "dist/vendor/selectize/selectize.default.css",
+                            dest : 'dist/vendor/selectize/selectize.default.min.css'
                         }
                     ]
                 }
@@ -282,39 +351,6 @@
                             src    : ["**/*.scss", "!**/*.min.scss"],
                             dest   : 'dist/css',
                             ext    : '.css'
-                        }
-                    ]
-                }
-            },
-            copy: {
-                // copy assets/js
-                js: {
-                    files: [
-                        {
-                            expand : true,
-                            cwd    : 'assets/js',
-                            src    : ['**/*.js'],
-                            dest   : 'dist/js',
-                            filter : 'isFile'
-                        },
-                        {
-                            expand : true,
-                            cwd    : 'assets/blocks',
-                            src    : ['**/*.js'],
-                            dest   : 'dist/blocks',
-                            filter : 'isFile'
-                        }
-                    ]
-                },
-                // copy highlightjs image & font assets
-                highlightjs: {
-                    files: [
-                        {
-                            expand : true,
-                            cwd    : 'node_modules/@highlightjs/cdn-assets/styles',
-                            src    : ['*.png', '*.gif', '*.jpg', '*.jpeg', '*.svg', '*.woff', '*.woff2', '*.ttf', '*.eot'],
-                            dest   : 'dist/highlightjs',
-                            filter : 'isFile'
                         }
                     ]
                 }

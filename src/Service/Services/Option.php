@@ -19,9 +19,9 @@ class Option extends AbstractService
     protected string $serviceName = 'option';
 
     /**
-     * @var string The option name.
+     * @var ?string The option name.
      */
-    private string $optionName = 'array-access_wp_libraries_core_options';
+    protected ?string $optionName = null;
 
     /**
      * The options.
@@ -55,9 +55,9 @@ class Option extends AbstractService
     /**
      * Get option name
      *
-     * @return string The option name.
+     * @return ?string The option name.
      */
-    public function getOptionName(): string
+    public function getOptionName(): ?string
     {
         return $this->optionName;
     }
@@ -73,12 +73,56 @@ class Option extends AbstractService
         string $optionName,
         bool $useCurrent = false
     ): void {
-        if (!$useCurrent && $this->optionName !== $optionName) {
+        if ($this->optionName === null || !$useCurrent && $this->optionName !== $optionName) {
             $this->options = null;
             $this->originalOptions = null;
         }
         $this->changed = false;
         $this->optionName = $optionName;
+    }
+
+    /**
+     * Get option
+     *
+     * @param ?string $optionName
+     * @param mixed $default
+     * @return mixed
+     */
+    protected function getOptionFrom(?string $optionName, mixed $default = []) : mixed
+    {
+        if ($optionName === null) {
+            return $default;
+        }
+        return get_option($optionName, $default);
+    }
+
+    /**
+     * Delete option
+     *
+     * @param ?string $optionName
+     * @return bool
+     */
+    protected function deleteOptionFrom(?string $optionName) : bool
+    {
+        if ($optionName === null) {
+            return false;
+        }
+        return delete_option($optionName);
+    }
+
+    /**
+     * Save option
+     *
+     * @param ?string $optionName
+     * @param array $value
+     * @return bool
+     */
+    protected function saveOptionFrom(?string $optionName, array $value) : bool
+    {
+        if ($optionName === null) {
+            return false;
+        }
+        return update_option($optionName, $value);
     }
 
     /**
@@ -91,7 +135,7 @@ class Option extends AbstractService
         if (is_array($this->options)) {
             return $this->options;
         }
-        $options = get_option($this->optionName, []);
+        $options = $this->getOptionFrom($this->getOptionName());
         if (!is_array($options)) {
             $options = [];
         }
@@ -185,7 +229,7 @@ class Option extends AbstractService
     {
         $this->changed = false;
         $this->options = null;
-        return delete_option($this->getOptionName());
+        return $this->deleteOptionFrom($this->getOptionName());
     }
 
     /**
@@ -196,7 +240,7 @@ class Option extends AbstractService
     public function save(): bool
     {
         if (is_array($this->options)) {
-            $result = update_option($this->getOptionName(), $this->options);
+            $result = $this->saveOptionFrom($this->getOptionName(), $this->options);
             if ($result) {
                 $this->originalOptions = $this->options;
                 $this->changed = false;

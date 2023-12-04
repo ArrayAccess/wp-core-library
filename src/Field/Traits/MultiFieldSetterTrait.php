@@ -20,7 +20,7 @@ trait MultiFieldSetterTrait
         }
 
         // if tag name is not same, return null
-        if ($field->getTagName() !== $this->tagName) {
+        if ($field->getTagName() !== $this->tagName && $this->tagName !== 'div') {
             return null;
         }
 

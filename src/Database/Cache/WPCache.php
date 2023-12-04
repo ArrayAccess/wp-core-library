@@ -14,7 +14,7 @@ use function wp_cache_set;
  */
 class WPCache extends CacheProvider
 {
-    public const GROUP = 'array-access-core';
+    public const GROUP = 'arrayaccess-core';
 
     /**
      * @inheritdoc

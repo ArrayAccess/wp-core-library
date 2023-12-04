@@ -17,6 +17,18 @@ class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface
     }
 
     /**
+     * @var string tag name
+     */
+    protected string $tagName = 'input';
+
+    /**
+     * @var array|string[]
+     */
+    protected array $attributes = [
+        'type' => 'checkbox'
+    ];
+
+    /**
      * @param string|int|float $name
      * @param string|int|float $value
      * @param string $imageUrl The image url.

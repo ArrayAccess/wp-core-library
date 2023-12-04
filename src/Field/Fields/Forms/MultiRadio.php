@@ -17,13 +17,27 @@ class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFi
     }
 
     /**
+     * @var string $tagName the tag name
+     */
+    protected string $tagName = 'input';
+
+    /**
+     * @var array|string[]
+     */
+    protected array $attributes = [
+        'type' => 'radio'
+    ];
+
+    /**
      * @param string|int|float $value
+     * @param string|null $label
      * @return ?FieldInterface
      */
-    public function add(string|int|float $value): ?FieldInterface
+    public function add(string|int|float $value, ?string $label = null): ?FieldInterface
     {
         $radio = new Radio($this->getName());
         $radio->setValue($value);
+        $radio->setLabel((string) ($label??$value));
         $this->remove($value);
         return $this->addValue($radio);
     }

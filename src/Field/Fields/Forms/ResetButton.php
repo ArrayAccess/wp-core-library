@@ -46,7 +46,7 @@ class ResetButton extends Button implements
 
     public function __construct(?string $name = null)
     {
-        $this->attributes['html'] = __('Reset', 'array-access');
+        $this->attributes['html'] = __('Reset', 'arrayaccess');
         parent::__construct($name);
     }
 

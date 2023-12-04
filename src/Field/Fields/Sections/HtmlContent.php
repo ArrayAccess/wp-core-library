@@ -32,6 +32,11 @@ class HtmlContent extends AbstractField implements
     ];
 
     /**
+     * @var array Disallowed remove attribute
+     */
+    protected array $disallowRemoveAttributes = [];
+
+    /**
      * @param ?string $name html content
      */
     public function __construct(?string $name = null)

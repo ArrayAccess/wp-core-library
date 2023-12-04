@@ -60,6 +60,11 @@ class Form extends AbstractField implements
     ];
 
     /**
+     * @var array Disallowed remove attribute
+     */
+    protected array $disallowRemoveAttributes = [];
+
+    /**
      * @var array|string[] disallowed attributes
      */
     protected array $disallowedAttributes = [

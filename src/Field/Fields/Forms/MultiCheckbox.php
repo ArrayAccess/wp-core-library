@@ -17,18 +17,32 @@ class MultiCheckbox extends AbstractField implements MultipleFieldInterface, For
     }
 
     /**
+     * @var string $tagName the tag name
+     */
+    protected string $tagName = 'input';
+
+    /**
+     * @var array|string[]
+     */
+    protected array $attributes = [
+        'type' => 'checkbox'
+    ];
+
+    /**
      * Add checkbox
      *
      * @param string|int|float $name
      * @param string|int|float $value
+     * @param string|null $label
      * @return ?FieldInterface
      */
-    public function add(string|int|float $name, string|int|float $value): ?FieldInterface
+    public function add(string|int|float $name, string|int|float $value, ?string $label = null): ?FieldInterface
     {
         $name = (string)$name;
         $inputName = $this->getName() . '[' . $name . ']';
         $checkbox = new Checkbox($inputName);
         $checkbox->setValue($value);
+        $checkbox->setLabel((string) ($label??$value));
         return $this->addValue($checkbox);
     }
 

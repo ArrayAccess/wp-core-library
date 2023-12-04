@@ -7,7 +7,9 @@ use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\StandardInputAttributeTrait;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
+use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use Throwable;
+use function is_numeric;
 
 class Slider extends AbstractField implements FormFieldTypeInterface
 {
@@ -32,6 +34,22 @@ class Slider extends AbstractField implements FormFieldTypeInterface
      * @var ?string The static type.
      */
     protected ?string $staticType = 'slider';
+
+    /**
+     * @param string $attributeName
+     * @param mixed $value
+     * @return $this
+     */
+    public function setAttribute(string $attributeName, mixed $value): static
+    {
+        $attributeName = HtmlAttributes::filterAttributeName($attributeName);
+        return is_numeric($value) ? match (strtolower($attributeName)) {
+            'min' => $this->setMin((int)$value),
+            'max' => $this->setMax((int)$value),
+            'step' => $this->setStep((int)$value),
+            default => parent::setAttribute($attributeName, $value),
+        } : parent::setAttribute($attributeName, $value);
+    }
 
     /**
      * Set the min attribute.

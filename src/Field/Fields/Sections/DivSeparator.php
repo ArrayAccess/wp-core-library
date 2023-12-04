@@ -27,6 +27,11 @@ class DivSeparator extends AbstractField implements
     protected array $attributes = [];
 
     /**
+     * @var array Disallowed remove attribute
+     */
+    protected array $disallowRemoveAttributes = [];
+
+    /**
      * @var array|string[] The disallowed attributes.
      */
     protected array $disallowedAttributes = [

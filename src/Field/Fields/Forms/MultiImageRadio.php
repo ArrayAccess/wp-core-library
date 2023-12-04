@@ -17,6 +17,18 @@ class MultiImageRadio extends AbstractField implements MultipleFieldInterface, F
     }
 
     /**
+     * @var string tag name
+     */
+    protected string $tagName = 'input';
+
+    /**
+     * @var array|string[]
+     */
+    protected array $attributes = [
+        'type' => 'radio'
+    ];
+
+    /**
      * @param string|int|float $value
      * @param string $imageUrl The image url.
      * @return ?FieldInterface

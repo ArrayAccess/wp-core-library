@@ -14,6 +14,7 @@ use function is_float;
 use function is_int;
 use function is_scalar;
 use function is_string;
+use function preg_match;
 use function wp_kses_post;
 
 /**
@@ -293,6 +294,22 @@ class Select extends AbstractField implements FormFieldTypeInterface
         }
         $attr = $this->getAttributes();
         $attr['multiple'] = $isMultiple;
+        $name = $this->getName();
+        if (!is_string($name)) {
+            $name = null;
+        }
+        if ($name) {
+            $name = $isMultiple && !preg_match(
+                '~^.*\[.*]~',
+                $name
+            ) ? $name . '[]' : $name;
+        }
+        if ($name === null) {
+            $this->setName(null);
+            unset($attr['name']);
+        } else {
+            $attr['name'] = $name;
+        }
         $attr['html'] = $html;
         $html = HtmlAttributes::createHtmlTag($this->getTagName(), $attr);
         $label = $this->getLabel();

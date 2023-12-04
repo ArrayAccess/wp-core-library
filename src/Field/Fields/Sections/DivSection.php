@@ -44,6 +44,11 @@ class DivSection extends AbstractField implements
     ];
 
     /**
+     * @var array Disallowed remove attribute
+     */
+    protected array $disallowRemoveAttributes = [];
+
+    /**
      * @return bool form is inline
      */
     public function isInline(): bool

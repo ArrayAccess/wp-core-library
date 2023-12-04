@@ -5,10 +5,18 @@ namespace ArrayAccess\WP\Libraries\Core\Options;
 
 use ArrayAccess\WP\Libraries\Core\Field\Builder;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Sections\DivSection;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Sections\Form;
+use function get_site_option;
+use function is_array;
 use function is_string;
 
 class Option
 {
+    public const PREFIX = 'array_access_options_';
+
+    /**
+     * @var string $optionName
+     */
     protected string $optionName;
 
     /**
@@ -16,14 +24,78 @@ class Option
      */
     protected array $sections = [];
 
+    /**
+     * @var array $options
+     */
+    protected array $options;
+
+    /**
+     * @param string $optionName
+     */
     public function __construct(string $optionName)
     {
         $this->optionName = $optionName;
     }
 
+    /**
+     * @return string
+     */
     public function getOptionName(): string
     {
         return $this->optionName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOptionNameWithPrefix(): string
+    {
+        $prefix = static::PREFIX;
+        /** @noinspection PhpConditionAlreadyCheckedInspection */
+        $prefix = ! is_string($prefix) ? self::PREFIX : $prefix;
+        return  $prefix . $this->optionName;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptions(): array
+    {
+        if (!isset($this->options)) {
+            $options = get_site_option($this->getOptionNameWithPrefix(), []);
+            $this->options = !is_array($options) ? [] : $options;
+        }
+        return $this->options;
+    }
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     * @return $this
+     */
+    public function setOption(string $name, mixed $value): static
+    {
+        $this->options ??= $this->getOptions();
+        $this->options[$name] = $value;
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public function getOption(string $name): mixed
+    {
+        $this->options ??= $this->getOptions();
+        return $this->options[$name] ?? null;
+    }
+
+    /**
+     * @return DivSection[]
+     */
+    public function getSections(): array
+    {
+        return $this->sections;
     }
 
     /**
@@ -52,7 +124,13 @@ class Option
         return $this->sections[$sectionId] ?? null;
     }
 
-    public function addSection(string $title, array $definitions) : DivSection
+    /**
+     * @param string $title
+     * @param array $definitions
+     * @param bool $useOption
+     * @return DivSection
+     */
+    public function addSection(string $title, array $definitions, bool $useOption = true) : DivSection
     {
         $section = $this->section($title);
         foreach ($definitions as $name => $definition) {
@@ -64,11 +142,49 @@ class Option
             if ($name === '') {
                 continue;
             }
+            if ($useOption) {
+                $definition['value'] = $this->getOption($name) ?? ($definition['value'] ?? '');
+            }
             $field = Builder::createField($name, $definition);
             if ($field) {
                 $section->addField($field);
             }
         }
         return $section;
+    }
+
+    /**
+     * @param string $optionName
+     * @param array $definitions
+     * @param bool $useOption
+     * @return static
+     */
+    public static function createFromArray(string $optionName, array $definitions, bool $useOption = true): static
+    {
+        $option = new static($optionName);
+        foreach ($definitions as $key => $definition) {
+            $title = $definition['title']??(string) $key;
+            $title = (string) $title;
+            $sections = $definition['sections']??[];
+            $sections = !is_array($sections) ? [] : $sections;
+            $option->addSection($title, $sections, $useOption);
+        }
+        return $option;
+    }
+
+    /**
+     * @param string|null $target
+     * @return Form
+     */
+    public function createForm(?string $target = null): Form
+    {
+        $form = new Form();
+        $form
+            ->setMethod('POST')
+            ->setTarget($target);
+        foreach ($this->getSections() as $section) {
+            $form->addField($section);
+        }
+        return $form;
     }
 }

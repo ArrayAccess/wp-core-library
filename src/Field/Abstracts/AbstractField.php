@@ -137,6 +137,10 @@ abstract class AbstractField implements FieldInterface
             );
             $this->attributes['type'] = $this->staticType;
         }
+
+        if (in_array('type', $this->disallowedAttributes)) {
+            unset($this->attributes['type']);
+        }
     }
 
     /**
@@ -328,7 +332,9 @@ abstract class AbstractField implements FieldInterface
             if (!is_string($attribute)) {
                 continue;
             }
-            if (!isset($this->attributes[$attribute])) {
+            if (!isset($this->attributes[$attribute])
+                && !in_array($attribute, $this->disallowedAttributes)
+            ) {
                 $this->attributes[$attribute] = $preservedAttributes[$attribute]??null;
             }
         }
@@ -428,7 +434,10 @@ abstract class AbstractField implements FieldInterface
         if ($this instanceof UnsupportedValueAttributeInterface) {
             unset($attributes['value']);
         }
-        if ($this instanceof UnsupportedNameAttributeInterface) {
+        if (empty($attributes['name'])
+            || !is_string($attributes['name'])
+            || $this instanceof UnsupportedNameAttributeInterface
+        ) {
             unset($attributes['name']);
         }
 

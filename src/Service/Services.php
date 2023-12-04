@@ -14,6 +14,7 @@ use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Hooks;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Option;
 use ArrayAccess\WP\Libraries\Core\Service\Services\Rest;
+use ArrayAccess\WP\Libraries\Core\Service\Services\SiteOption;
 use ArrayAccess\WP\Libraries\Core\Service\Services\StatelessHash;
 use ArrayAccess\WP\Libraries\Core\Service\Traits\URLReplacerTrait;
 use ArrayAccess\WP\Libraries\Core\Util\Consolidator;
@@ -83,6 +84,7 @@ final class Services implements ServicesInterface
         DefaultAssets::class,
         Hooks::class,
         Option::class,
+        SiteOption::class,
         Rest::class,
         StatelessHash::class,
     ];
@@ -259,14 +261,24 @@ final class Services implements ServicesInterface
      */
     public function contain(ServiceInterface|string $service): bool
     {
-        $serviceId = $this->getServiceClassName($service);
+        $serviceId = $this->getServiceId($service);
         // ignore invalid service
         if (!$serviceId) {
             return false;
         }
+        if (is_object($service)) {
+            if (isset($this->services[$serviceId])) {
+                return in_array(
+                    $service,
+                    $this->services,
+                    true
+                );
+            }
+        }
+
         // If service object, check if the service is in the services
-        return in_array($service, $this->services, true) || (
-            in_array($serviceId, $this->queuedServices, true)
+        return isset($this->services[$serviceId]) || (
+            isset($this->queuedServices[$serviceId])
         );
     }
 

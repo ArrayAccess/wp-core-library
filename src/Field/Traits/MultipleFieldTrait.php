@@ -79,8 +79,9 @@ trait MultipleFieldTrait
      * @return string
      * @noinspection PhpNonStrictObjectEqualityInspection
      */
-    public function build(?bool $inline = null, string $wrapper = 'div'): string
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
     {
+        $wrapper = !is_string($wrapper) ? 'div' : $wrapper;
         $html = '';
         foreach ($this->getFields() as $field) {
             // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators

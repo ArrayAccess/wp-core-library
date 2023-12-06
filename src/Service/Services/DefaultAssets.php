@@ -57,80 +57,6 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
     private static ?DefaultAssets $instance = null;
 
     /**
-     * Default assets.
-     */
-    public const ASSETS = [
-        'css' => [
-            'arrayaccess-common' => [
-                'src' => '{{dist_url}}/css/common.min.css',
-                'deps' => [],
-                'ver' => '1.0.0',
-                'media' => 'all',
-            ],
-            'arrayaccess-admin' => [
-                'src' => '{{dist_url}}/css/admin.min.css',
-                'deps' => [
-                    'arrayaccess-common'
-                ],
-                'ver' => '1.0.0',
-                'media' => 'all',
-            ],
-            'arrayaccess-editor' => [
-                'src' => '{{dist_url}}/vendor/highlightjs/highlight.bundle.min.css',
-                'deps' => [
-                    'arrayaccess-common'
-                ],
-                'ver' => HighlightJS::VERSION,
-                'media' => 'all',
-            ],
-            'selectize' => [
-                'src' => '{{dist_url}}/vendor/selectize/selectize.default.min.css',
-                'deps' => [
-                    'arrayaccess-common',
-                ],
-                'ver' => '0.15.2',
-                'media' => 'all',
-            ],
-        ],
-        'js' => [
-            'arrayaccess-common' => [
-                'src' => '{{dist_url}}/js/common.min.js',
-                'deps' => [
-                    'jquery',
-                ],
-                'ver' => '1.0.0',
-                'in_footer' => true,
-            ],
-            'arrayaccess-admin' => [
-                'src' => '{{dist_url}}/js/admin.min.js',
-                'deps' => [
-                    'arrayaccess-common',
-                    'wp-util',
-                ],
-                'ver' => '1.0.0',
-                'in_footer' => true,
-            ],
-            'arrayaccess-editor' => [
-                'src' => '{{dist_url}}/js/editor.bundle.min.js',
-                'deps' => [
-                    'arrayaccess-common',
-                ],
-                'ver' => '1.0.0',
-                'in_footer' => false,
-                // 'type' => 'module'
-            ],
-            'selectize' => [
-                'src' => '{{dist_url}}/vendor/selectize/selectize.min.js',
-                'deps' => [
-                    'arrayaccess-common'
-                ],
-                'ver' => '0.15.2',
-                'in_footer' => true,
-            ],
-        ],
-    ];
-
-    /**
      * @var bool Whether the service is initialized.
      */
     private bool $init = false;
@@ -144,7 +70,15 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
             'Service that help to register default assets.',
             'arrayaccess'
         );
-        self::$instance = $this;
+        self::$instance ??= $this;
+    }
+
+    /**
+     * @return bool Whether the instance is set.
+     */
+    public static function hasInstance(): bool
+    {
+        return self::$instance !== null;
     }
 
     /**
@@ -153,6 +87,31 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
     public static function getInstance(): DefaultAssets
     {
         return self::$instance ??= new self(new Services());
+    }
+
+    /**
+     * Enqueue asset.
+     *
+     * @param string $handle
+     * @param string|null $type
+     * @return self
+     */
+    public static function enqueue(string $handle, ?string $type = null): self
+    {
+        return self::getInstance()->enqueueAsset($handle, $type);
+    }
+
+    /**
+     * Register asset.
+     *
+     * @param string $handle
+     * @param array $asset
+     * @param string $type
+     * @return bool Whether the asset is registered.
+     */
+    public static function register(string $handle, array $asset, string $type): bool
+    {
+        return self::getInstance()->registerAsset($handle, $asset, $type);
     }
 
     /**
@@ -215,7 +174,15 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                 $this->registerAsset($handle, $asset, $type);
             }
         }
-        $this->register();
+        $callback = function () use (&$callback) {
+            remove_action('init', $callback);
+            $this->registerAssets();
+        };
+        if ($this->services->isDoingWrongScripts()) {
+            add_action('init', $callback);
+            return;
+        }
+        $callback();
     }
 
     /**
@@ -274,6 +241,10 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
         $asset['ver'] = $asset['ver']??false;
         $asset['ver'] = !is_string($asset['ver']) || trim($asset['ver']) === '' ? false : $asset['ver'];
         $asset['type'] = $asset['type']??null;
+        $asset['attributes'] = $asset['attributes']??[];
+        if (!is_array($asset['attributes'])) {
+            $asset['attributes'] = [];
+        }
         // check if asset is already registered & same value
         if (isset($this->assets[$type][$handle])) {
             $registeredAsset = $this->assets[$type][$handle];
@@ -298,7 +269,18 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                 if ($type === 'css') {
                     wp_register_style($handle, $asset['src'], $asset['deps'], $asset['ver'], $asset['media']);
                 } else {
-                    wp_register_script($handle, $asset['src'], $asset['deps'], $asset['ver'], $asset['in_footer']);
+                    $attributes = $asset['attributes'];
+                    $attributes = is_array($attributes) ? $attributes : [];
+                    if (!empty($asset['in_footer'])) {
+                        $attributes['in_footer'] = true;
+                    }
+                    wp_register_script(
+                        $handle,
+                        $asset['src'],
+                        $asset['deps'],
+                        $asset['ver'],
+                        $attributes
+                    );
                     if (($asset['type']??null) === 'module') {
                         wp_script_add_data($handle, 'type', 'module');
                     }
@@ -310,46 +292,29 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
     }
 
     /**
-     * Register assets.
-     *
-     * @return void
-     */
-    public function register(): void
-    {
-        $callback = function () use (&$callback) {
-            remove_action('init', $callback);
-            $this->registerAssets();
-        };
-
-        if ($this->services->isDoingWrongScripts()) {
-            add_action('init', $callback);
-            return;
-        }
-        $callback();
-    }
-
-    /**
      * Enqueue asset.
      *
      * @param string $handle
      * @param ?string $type null to enqueue both css and js, css to enqueue only css, js to enqueue only js.
-     * @return void
+     * @return $this
      */
-    public function enqueueAsset(string $handle, ?string $type = null): void
+    public function enqueueAsset(string $handle, ?string $type = null): self
     {
         if (trim($handle) === '') {
-            return;
+            return $this;
         }
 
         if ($type !== null) {
             $type = strtolower(trim($type));
             // only accept css and js
             if (!isset(self::ASSETS[$type])) {
-                return;
+                return $this;
             }
         }
-        $callback = function () use (&$callback, $handle, $type) {
-            remove_action('init', $callback);
+
+        $action = 'init';
+        $callback = function () use ($action, &$callback, $handle, $type) {
+            remove_action($action, $callback, 99999);
             if ($type && !isset($this->assets[$type][$handle])) {
                 return;
             }
@@ -373,11 +338,131 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
             }
         };
 
-        // check if scripts registration is doing wrong.
-        if ($this->services->isDoingWrongScripts()) {
-            add_action('init', $callback);
-            return;
+        // admin assets should be enqueued in admin_enqueue_scripts
+        if ($handle === 'arrayaccess-admin') {
+            $action = 'admin_enqueue_scripts';
         }
-        $callback();
+        // common assets should be enqueued in wp_enqueue_scripts
+        if ($handle === 'arrayaccess-common') {
+            $action = 'wp_enqueue_scripts';
+        }
+        try {
+            // check if scripts registration is doing wrong.
+            if ($this->services->isDoingWrongScripts()
+                || $action !== 'init' && !did_action($action)
+            ) {
+                add_action($action, $callback, 99999);
+                return $this;
+            }
+            $callback();
+        } finally {
+            // enqueue common assets if needed
+            if ($handle !== 'arrayaccess-common'
+                && ($type === null || $type === 'js')
+                && isset(self::ASSETS['js'][$handle])
+            ) {
+                $this->enqueueAsset('arrayaccess-common');
+            }
+        }
+        return $this;
     }
+
+    /**
+     * Default assets.
+     * Move to bottom for readability.
+     */
+    public const ASSETS = [
+        'css' => [
+            'arrayaccess-common' => [
+                'src' => '{{dist_url}}/css/common.min.css',
+                'deps' => [],
+                'ver' => '1.0.0',
+                'media' => 'all',
+            ],
+            'arrayaccess-admin' => [
+                'src' => '{{dist_url}}/css/admin.min.css',
+                'deps' => [
+                    'arrayaccess-common'
+                ],
+                'ver' => '1.0.0',
+                'media' => 'all',
+            ],
+            'arrayaccess-editor' => [
+                'src' => '{{dist_url}}/vendor/highlightjs/highlight.bundle.min.css',
+                'deps' => [
+                    'arrayaccess-common'
+                ],
+                'ver' => HighlightJS::VERSION,
+                'media' => 'all',
+            ],
+            'selectize' => [
+                'src' => '{{dist_url}}/vendor/selectize/selectize.default.min.css',
+                'deps' => [
+                    'arrayaccess-common',
+                ],
+                'ver' => '0.15.2',
+                'media' => 'all',
+            ],
+            'flatpickr-bundle' => [
+                'src' => '{{dist_url}}/vendor/flatpickr/flatpickr.bundle.min.css',
+                'deps' => [
+                    'arrayaccess-common',
+                ],
+                'ver' => '4.6.13',
+                'media' => 'all',
+            ]
+        ],
+        'js' => [
+            'arrayaccess-common' => [
+                'src' => '{{dist_url}}/js/common.min.js',
+                'deps' => [
+                    'jquery',
+                ],
+                'ver' => '1.0.0',
+                'in_footer' => true,
+                'attributes' => [
+                    'strategy' => 'defer',
+                ],
+            ],
+            'arrayaccess-admin' => [
+                'src' => '{{dist_url}}/js/admin.min.js',
+                'deps' => [
+                    'arrayaccess-common',
+                    'wp-util',
+                ],
+                'ver' => '1.0.0',
+                'in_footer' => true,
+                'attributes' => [
+                    'strategy' => 'defer',
+                ],
+            ],
+            'arrayaccess-editor' => [
+                'src' => '{{dist_url}}/js/editor.bundle.min.js',
+                'deps' => [],
+                'ver' => '1.0.0',
+                'in_footer' => true,
+                'attributes' => [
+                    'strategy' => 'defer',
+                ],
+            ],
+            'selectize' => [
+                'src' => '{{dist_url}}/vendor/selectize/selectize.min.js',
+                'deps' => [],
+                'ver' => '0.15.2',
+                'in_footer' => true,
+                'attributes' => [
+                    'strategy' => 'async',
+                ],
+            ],
+            'flatpickr' => [
+                'src' => '{{dist_url}}/vendor/flatpickr/flatpickr.bundle.min.js',
+                'deps' => [],
+                'ver' => '4.6.13',
+                'in_footer' => true,
+                'attributes' => [
+                    'strategy' => 'async',
+                ],
+            ],
+        ],
+    ];
 }

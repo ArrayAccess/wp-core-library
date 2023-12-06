@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
+use function is_scalar;
 use function spl_object_hash;
 
 class MultiCheckbox extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
@@ -36,13 +37,18 @@ class MultiCheckbox extends AbstractField implements MultipleFieldInterface, For
      * @param string|null $label
      * @return ?FieldInterface
      */
-    public function add(string|int|float $name, string|int|float $value, ?string $label = null): ?FieldInterface
+    public function add(mixed $name, mixed $value, mixed $label = null): ?FieldInterface
     {
+        if (!is_scalar($value) || !is_scalar($name)) {
+            return null;
+        }
+        $label = !is_scalar($label) ? null : $label;
+        $label ??= (string) $value;
         $name = (string)$name;
         $inputName = $this->getName() . '[' . $name . ']';
         $checkbox = new Checkbox($inputName);
         $checkbox->setValue($value);
-        $checkbox->setLabel((string) ($label??$value));
+        $checkbox->setLabel($label);
         return $this->addValue($checkbox);
     }
 

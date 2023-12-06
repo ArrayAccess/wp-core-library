@@ -82,12 +82,13 @@ class Option
 
     /**
      * @param string $name
+     * @param mixed|null $default
      * @return mixed
      */
-    public function getOption(string $name): mixed
+    public function getOption(string $name, mixed $default = null): mixed
     {
         $this->options ??= $this->getOptions();
-        return $this->options[$name] ?? null;
+        return $this->options[$name] ?? $default;
     }
 
     /**
@@ -142,8 +143,12 @@ class Option
             if ($name === '') {
                 continue;
             }
+            $definition['default'] ??= null;
             if ($useOption) {
-                $definition['value'] = $this->getOption($name) ?? ($definition['value'] ?? '');
+                $definition['value'] = $this->getOption(
+                    $name,
+                    $definition['value'] ?? $definition['default']
+                );
             }
             $field = Builder::createField($name, $definition);
             if ($field) {
@@ -159,13 +164,19 @@ class Option
      * @param bool $useOption
      * @return static
      */
-    public static function createFromArray(string $optionName, array $definitions, bool $useOption = true): static
-    {
+    public static function createFromArray(
+        string $optionName,
+        array $definitions,
+        bool $useOption = true
+    ): static {
         $option = new static($optionName);
         foreach ($definitions as $key => $definition) {
             $title = $definition['title']??(string) $key;
             $title = (string) $title;
-            $sections = $definition['sections']??[];
+            // we use 2 alternative key fields or sections
+            $sections = isset($definition['fields']) && is_array($definition['fields'])
+                ? $definition['fields']
+                : $definition['sections']??[];
             $sections = !is_array($sections) ? [] : $sections;
             $option->addSection($title, $sections, $useOption);
         }

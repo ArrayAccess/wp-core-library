@@ -4,14 +4,17 @@ declare(strict_types=1);
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
+use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractOptionCollection;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function array_filter;
+use function array_map;
 use function array_values;
 use function esc_html;
 use function force_balance_tags;
 use function func_num_args;
+use function in_array;
 use function is_array;
 use function is_float;
 use function is_int;
@@ -33,16 +36,6 @@ class Select extends AbstractField implements FormFieldTypeInterface
      * @var string The tag name.
      */
     protected string $tagName = 'select';
-
-    /**
-     * @var array<scalar, array> key is the value and value is the label
-     */
-    protected array $options = [];
-
-    /**
-     * @var string[] The selected value, if null, the first option will be selected
-     */
-    protected array $selected = [];
 
     /**
      * The info of select field (the name info of the field)
@@ -79,13 +72,9 @@ class Select extends AbstractField implements FormFieldTypeInterface
     protected bool $multiple = false;
 
     /**
-     * @param string|null $selected The selected value, if null, the first option will be selected
+     * @var array<option|OptGroup> The options of select field.
      */
-    public function __construct(?string $name = null, ...$selected)
-    {
-        parent::__construct($name);
-        $this->setSelected(...array_values($selected));
-    }
+    protected array $options = [];
 
     /**
      * @param bool $multiple
@@ -121,22 +110,16 @@ class Select extends AbstractField implements FormFieldTypeInterface
      */
     public function setAttribute(string $attributeName, mixed $value): static
     {
-        $attributeName = HtmlAttributes::filterAttributeName($attributeName);
-        if ($attributeName === 'selected') {
-            $value = is_array($value) ? array_values($value) : (
-                is_iterable($value)
-                    ? iterator_to_array($value)
-                    : [$value]
-            );
-            $this->setSelected(...array_values($value));
-            return $this;
-        }
-
         if ($attributeName === 'multiple') {
             $this->setMultiple((bool) $value);
             return $this;
         }
-
+        if ($attributeName === 'placeholder'
+            && !$this->info
+            && is_string($value)
+        ) {
+            $this->setInfo($value);
+        }
         return parent::setAttribute($attributeName, $value);
     }
 
@@ -146,13 +129,24 @@ class Select extends AbstractField implements FormFieldTypeInterface
      */
     public function addSelected(mixed $selected): static
     {
-        if (is_scalar($selected) && isset($this->options[(string) $selected])) {
-            $selected = (string) $selected;
-            $this->selected[$selected] = true;
-        } elseif (is_array($selected) || is_iterable($selected)) {
-            foreach ($selected as $value) {
-                $this->addSelected($value);
+        if (!is_array($selected) && is_iterable($selected)) {
+            $selected = iterator_to_array($selected);
+        }
+        $selected = is_array($selected) ? array_values($selected) : [$selected];
+        foreach ($this->options as $k => $children) {
+            if ($children instanceof AbstractOptionCollection) {
+                $children->addSelectedOption(...$selected);
+                continue;
             }
+            if ($children instanceof Option) {
+                $value = $children->getValue();
+                if ($value !== null && in_array($value, $selected, true)) {
+                    $children->setSelected(true);
+                }
+                continue;
+            }
+            // remove if not option or optgroup
+            unset($this->options[$k]);
         }
         return $this;
     }
@@ -162,24 +156,89 @@ class Select extends AbstractField implements FormFieldTypeInterface
      * @param string ...$selected
      * @return $this
      */
-    public function setSelected(mixed ...$selected): static
+    public function setSelected(mixed $selected): static
     {
-        $this->selected = [];
-        return $this->addSelected(array_values($selected));
+        if (!is_array($selected) && is_iterable($selected)) {
+            $selected = iterator_to_array($selected);
+        }
+        $selected = is_array($selected) ? array_values($selected) : [$selected];
+        foreach ($this->options as $k => $children) {
+            if ($children instanceof OptGroup) {
+                $children->setSelectedOption(...$selected);
+                continue;
+            }
+            if ($children instanceof Option) {
+                $value = $children->getValue();
+                if ($value !== null && in_array($value, $selected, true)) {
+                    $children->setSelected(true);
+                }
+                continue;
+            }
+            // remove if not option or optgroup
+            unset($this->options[$k]);
+        }
+        return $this;
+    }
+
+    public function remove(mixed $value): static
+    {
+        if ($value instanceof Option || $value instanceof OptGroup) {
+            $this->options = array_filter(
+                $this->options,
+                fn ($e) => $e !== $value,
+                ARRAY_FILTER_USE_KEY
+            );
+            return $this;
+        }
+        if (!is_scalar($value)) {
+            return $this;
+        }
+
+        foreach ($this->options as $k => $children) {
+            if ($children instanceof OptGroup) {
+                foreach ($children->getOptions() as $opt) {
+                    if ($opt->getValue() === $value) {
+                        $children->remove($opt);
+                    }
+                }
+                continue;
+            }
+            if ($children instanceof Option && $children->getValue() === $value) {
+                unset($this->options[$k]);
+            }
+        }
+        return $this;
     }
 
     /**
      * Get options of select field.
      *
-     * @return array<scalar, array> The selected value.
+     * @return array<scalar, ?string> The selected value.
      */
     public function getSelected(): array
     {
-        return array_filter(
-            $this->getOptions(),
-            fn ($e) => isset($this->selected[$e]),
-            ARRAY_FILTER_USE_KEY
-        );
+        $selected = [];
+        foreach ($this->getOptions() as $children) {
+            if ($children instanceof OptGroup) {
+                $selectedOptions = $children->getSelectedOptions();
+                foreach ($selectedOptions as $option) {
+                    $value = $option->getValue();
+                    if (is_scalar($value)) {
+                        $value = (string) $value;
+                        $selected[$value] = $option->getLabel();
+                    }
+                }
+                continue;
+            }
+            if ($children instanceof Option && $children->isSelected()) {
+                $value = $children->getValue();
+                if (is_scalar($value)) {
+                    $value = (string) $value;
+                    $selected[$value] = $children->getLabel();
+                }
+            }
+        }
+        return $selected;
     }
 
     /**
@@ -187,7 +246,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
      */
     public function clearSelected(): static
     {
-        $this->selected = [];
+        array_map(fn (Option $e) => $e->setSelected(false), $this->getOptions());
         return $this;
     }
 
@@ -240,50 +299,126 @@ class Select extends AbstractField implements FormFieldTypeInterface
      * @param string|int|float $value
      * @param string $label
      * @param array $attributes
+     * @return ?Option
+     */
+    public function addOptionByDeclaration(mixed $value, mixed $label, array $attributes = []): ?Option
+    {
+        if (!is_scalar($value) || !is_scalar($label)) {
+            return null;
+        }
+        $option = new Option();
+        $value = (string) $value;
+        $option->setLabel(
+            $label
+        )->setValue(
+            $value
+        )->setAttributes(
+            $attributes
+        );
+        $selected = HtmlAttributes::isBooleanAttributeEnabled(
+            'selected',
+            $attributes['selected']??false
+        );
+        if ($selected) {
+            $option->setSelected(true);
+        }
+        $this->add($option);
+        return $option;
+    }
+
+    /**
+     * @param scalar $label
+     * @param array $options
+     * @return ?OptGroup
+     */
+    public function addOptionGroupByDeclaration(mixed $label, array $options = []): ?OptGroup
+    {
+        if (!is_scalar($label)) {
+            return null;
+        }
+        $label = (string) $label;
+        $optGroup = new OptGroup();
+        $optGroup->setLabel($label);
+        $this->add($optGroup);
+        foreach ($options as $k => $label) {
+            if (is_scalar($label)) {
+                $optGroup->addOption($k, $label);
+                continue;
+            }
+            if ($label instanceof Option) {
+                $optGroup->add($label);
+                continue;
+            }
+            if ($label instanceof OptGroup) {
+                foreach ($label->getOptions() as $opt) {
+                    $optGroup->add($opt);
+                }
+                continue;
+            }
+            if (!is_array($label)) {
+                continue;
+            }
+            $labelName  = $label['label']??null;
+            $value = $label['value']??$k;
+            if (!is_scalar($value)) {
+                continue;
+            }
+
+            $labelName ??= $value;
+            if (!is_scalar($labelName)) {
+                continue;
+            }
+            $attributes = $label['attributes']??null;
+            unset($label['label'], $label['value'], $label['attributes']);
+            if (!is_array($attributes)) {
+                $attributes = $label;
+            }
+            $optGroup->addOption($value, $labelName, $attributes);
+        }
+        return $optGroup;
+    }
+
+    /**
+     * @param OptGroup|Option $option
      * @return $this
      */
-    public function addOption(string|int|float $value, string $label, array $attributes = []): static
+    public function add(OptGroup|Option $option): static
     {
-        $value = (string) $value;
-        $attributes['label'] = $label;
-        $this->options[$value] = $attributes;
-        $selected = HtmlAttributes::isBooleanEnabled($attributes['selected']??false);
-        unset($attributes['selected'], $attributes['value']);
-        if ($selected) {
-            $this->addSelected($value);
+        if (in_array($option, $this->getOptions(), true)) {
+            return $this;
         }
+        $this->options[] = $option;
         return $this;
     }
 
     /**
      * Check if select field has an option.
      *
-     * @param string|int|float $value
+     * @param scalar|OptGroup|Option $value
      * @return bool
      */
     public function hasOption(mixed $value): bool
     {
+        if ($value instanceof Option || $value instanceof OptGroup) {
+            return in_array($value, $this->getOptions(), true);
+        }
+
         if (!is_scalar($value)) {
             return false;
         }
-        $value = (string) $value;
-        return isset($this->options[$value]);
-    }
 
-    /**
-     * Remove an option from select field.
-     *
-     * @param mixed $value
-     * @return $this
-     */
-    public function removeOption(mixed $value): static
-    {
-        if (!is_scalar($value)) {
-            return $this;
+        foreach ($this->getOptions() as $children) {
+            if ($children instanceof AbstractOptionCollection) {
+                if ($children->hasOption($value)) {
+                    return true;
+                }
+                continue;
+            }
+            if ($children instanceof Option && $children->getValue() === $value) {
+                return true;
+            }
         }
-        $value = (string) $value;
-        unset($this->options[$value], $this->selected[$value]);
-        return $this;
+        return false;
     }
 
     /**
@@ -291,7 +426,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
      *
      * @return $this
      */
-    public function clearOptions(): static
+    public function clear(): static
     {
         $this->options = [];
         return $this;
@@ -300,7 +435,7 @@ class Select extends AbstractField implements FormFieldTypeInterface
     /**
      * Get all options.
      *
-     * @return array<scalar, array> key is the value and value is the label
+     * @return array<scalar, Option|OptGroup> key is the value and value is the label
      */
     public function getOptions(): array
     {
@@ -319,19 +454,19 @@ class Select extends AbstractField implements FormFieldTypeInterface
         $html = '';
         $info = $this->getInfo();
         $containSelected = false;
-        $selected = $this->getSelected();
-        foreach ($this->getOptions() as $value => $attr) {
-            $attr['label'] = (string) ($attr['label']??$value);
-            $attr['value'] = (string) $value;
-            $attr['selected'] = isset($selected[$value]);
-            $containSelected = $containSelected || $attr['selected'];
-            if (!$attr['selected']) {
-                unset($attr['selected']);
+        foreach ($this->getOptions() as $option) {
+            if (!$containSelected) {
+                if ($option instanceof Option) {
+                    $containSelected = $option->isSelected();
+                } elseif ($option instanceof OptGroup) {
+                    $containSelected = $option->hasSelectedOption();
+                }
             }
-            $html .= HtmlAttributes::createHtmlTag('option', $attr);
+
+            $html .= $option->build();
         }
 
-        if ($info) {
+        if ($info && !$this->isMultiple()) {
             $attr = [
                 'value' => '',
             ];
@@ -341,8 +476,10 @@ class Select extends AbstractField implements FormFieldTypeInterface
             if (!$this->isInfoSelectable()) {
                 $attr['disabled'] = true;
             }
-            $html = HtmlAttributes::createHtmlTag('option', $attr) . $html;
+            $opt = (new Option())->setSelected(true)->setAttributes($attr)->setLabel($info);
+            $html = $opt->build() . $html;
         }
+
         $attr = $this->getAttributes();
         $attr['placeholder'] ??= $info??_n(
             'Select an option ...',
@@ -424,13 +561,16 @@ class Select extends AbstractField implements FormFieldTypeInterface
         return false;
     }
 
+    /**
+     * @return $this
+     */
     protected function doEnqueueAssets(): static
     {
         if ($this->getAttribute('data-selectize') !== 'true') {
             return $this;
         }
-
-        if (!wp_script_is('selectize')
+        if (!wp_style_is('arrayaccess-common')
+            || !wp_script_is('selectize')
             || !wp_style_is('selectize')
         ) {
             $defaultAssets = DefaultAssets::getInstance();

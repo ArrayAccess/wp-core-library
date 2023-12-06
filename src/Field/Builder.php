@@ -7,6 +7,8 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Button;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Checkbox;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\CodeEditor;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ColorPicker;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Date;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\DateTime;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Email;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\File;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Hidden;
@@ -21,6 +23,8 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiInput;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiRadio;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiSelect;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Nonce;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\OptGroup;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Option;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Radio;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ResetButton as ButtonReset;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Select;
@@ -103,9 +107,11 @@ class Builder
             $definition['checked'],
             $definition['selected']
         );
+        $skipAppendValue = false;
         switch ($type) {
             case 'button':
                 $field = new Button($name);
+                $skipAppendValue = true;
                 break;
 
             case 'checkbox':
@@ -122,12 +128,13 @@ class Builder
             case 'editor-input':
                 $field = new CodeEditor($name);
                 $content = $value??(
-                    $definition['html']??(
-                    $definition['content']??null
-                )
+                        $definition['html']??(
+                        $definition['content']??null
+                    )
                 );
                 unset($definition['html'], $definition['content']);
                 $field->setValue($content);
+                $skipAppendValue = true;
                 break;
             case 'code':
             case 'code-block':
@@ -139,6 +146,7 @@ class Builder
                 unset($definition['html'], $definition['content']);
                 $content = (string) $content;
                 $field->setContent($content);
+                $skipAppendValue = true;
                 break;
             case 'color-picker':
             case 'colorpicker':
@@ -148,7 +156,19 @@ class Builder
             case 'colorpicker-input':
                 $field = new ColorPicker($name);
                 break;
-
+            case 'date':
+            case 'date-input':
+            case 'datetime':
+            case 'datetime-input':
+                $field = $type === 'date' || $type === 'date-input'
+                    ? new Date($name)
+                    : new DateTime($name);
+                $format = $definition['format']??null;
+                unset($definition['format']);
+                if (is_string($format)) {
+                    $field->setDateFormat($format);
+                }
+                break;
             case 'email':
             case 'email-input':
                 $field = new Email($name);
@@ -230,6 +250,7 @@ class Builder
                         );
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'multi-image-checkbox':
             case 'multiimage-checkbox':
@@ -265,9 +286,9 @@ class Builder
                     $checkboxDefinition['name'] ??= $optionName;
                     $value = $checkboxDefinition['value']??null;
                     $imageUrl = $checkboxDefinition['image_url']??(
-                        $checkboxDefinition['image']??(
-                        $checkboxDefinition['url']??null
-                    )
+                            $checkboxDefinition['image']??(
+                            $checkboxDefinition['url']??null
+                        )
                     );
                     $checkboxDefinition['checked'] ??= $checked[$optionName]??false;
                     $imageUrl = is_string($imageUrl) ? $imageUrl : '';
@@ -285,6 +306,7 @@ class Builder
                         );
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'multi-image-radio':
             case 'multiimage-radio':
@@ -330,6 +352,7 @@ class Builder
                         );
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'multi-input':
             case 'multiinput':
@@ -393,6 +416,7 @@ class Builder
                         );
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'multi-radio':
             case 'multiradio':
@@ -435,6 +459,7 @@ class Builder
                         );
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'multi-select':
             case 'multiselect':
@@ -453,9 +478,14 @@ class Builder
                 }
                 // add selectize
                 $field->setAttribute('data-selectize', 'true');
-                $selectedVal = is_array($value) ? $value : [];
                 /** @noinspection DuplicatedCode */
                 foreach ($options as $key => $optionDefinition) {
+                    if ($optionDefinition instanceof Option
+                        || $optionDefinition instanceof OptGroup
+                    ) {
+                        $field->add($optionDefinition);
+                        continue;
+                    }
                     if (!is_array($optionDefinition)) {
                         if (!is_scalar($optionDefinition)) {
                             // invalid! stop!
@@ -464,45 +494,64 @@ class Builder
                         $optionDefinition = [
                             'label'  => (string) $optionDefinition,
                             'value' => $optionDefinition,
-                            'selected' => null
+                            'selected' => null,
+                            'type' => 'option'
                         ];
-                    } elseif (count($optionDefinition) === 1 && array_key_exists(0, $optionDefinition)) {
+                    } elseif (count($optionDefinition) === 1
+                        && array_key_exists(0, $optionDefinition)
+                        && !is_array($optionDefinition['options']??null)
+                    ) {
                         $optionDefinition = [
                             'label' => (string) $optionDefinition[0],
                             'value' => (string) $optionDefinition[0],
-                            'selected' => null
+                            'selected' => null,
+                            'type' => 'option'
                         ];
                     } elseif (is_string($key)) {
                         $optionDefinition['label'] ??= $key;
                         $optionDefinition['value'] ??= $key;
                     }
+
                     $optName  = $optionDefinition['label']??null;
+                    if (!is_scalar($optName)) {
+                        // invalid! stop!
+                        return null;
+                    }
+
+                    if (($optionDefinition['type']??null) === 'group'
+                        || (
+                            ($optionDefinition['type']??null) !== 'option'
+                            && is_array($optionDefinition['options']??null)
+                        )
+                    ) {
+                        $optionsGroup = $optionDefinition['options']??[];
+                        if (!is_array($optionsGroup)) {
+                            continue;
+                        }
+                        $field->addOptionGroupByDeclaration(
+                            $optName,
+                            $optionsGroup
+                        );
+                        continue;
+                    }
                     $optValue = $optionDefinition['value']??null;
-                    if (!is_string($optName) || !is_scalar($optValue)) {
+                    if (!is_scalar($optValue)) {
                         // invalid! stop!
                         return null;
                     }
                     $optValue = (string) $optValue;
                     $optionDefinition['selected'] ??= $selected[$optValue]??false;
-                    $field->addOption($optValue, $optName, $optionDefinition);
-                    if (in_array($optValue, $selectedVal, true)) {
-                        continue;
-                    }
-                    $isSelected = ($value !== null || $value === $optValue)
-                        || HtmlAttributes::isBooleanEnabled(
-                            $optionDefinition['selected']
-                        );
-                    if ($isSelected) {
-                        $selectedVal[] = $optValue;
-                    }
+                    $field->addOptionByDeclaration($optValue, $optName, $optionDefinition);
                 }
-                $field->setSelected(...$selectedVal);
+
+                $skipAppendValue = true;
                 break;
             case 'nonce':
             case 'wpnonce':
             case 'wp_nonce':
             case 'wp-nonce':
                 $field = new Nonce($name);
+                $skipAppendValue = true;
                 break;
 
             case 'radio':
@@ -514,6 +563,7 @@ class Builder
             case 'button-reset':
             case 'buttonreset':
                 $field = new ButtonReset($name);
+                $skipAppendValue = true;
                 break;
             case 'slider':
             case 'slider-input':
@@ -543,9 +593,11 @@ class Builder
                         $field->addField($section);
                     }
                 }
+                $skipAppendValue = true;
                 break;
             case 'separator':
                 $field = new DivSeparator($name);
+                $skipAppendValue = true;
                 break;
 
             case 'html':
@@ -558,6 +610,7 @@ class Builder
                 );
                 unset($definition['content'], $definition['html']);
                 $field->setContent((string) $content);
+                $skipAppendValue = true;
                 break;
             default:
                 return null;
@@ -587,18 +640,26 @@ class Builder
                 $field->setAttribute('value', $value);
             }
         }
+        if (isset($definition['date_format'])
+            && is_string($definition['date_format'])
+        ) {
+            $field->setDateFormat($definition['date_format']);
+        }
+        unset($definition['date_format']);
         $field
             ->setLabel($title)
-            ->setDescription($description)
-            ->setAttribute('value', $value);
+            ->setDescription($description);
+        if (!$skipAppendValue && !$field instanceof UnsupportedValueAttributeInterface) {
+            $field->setAttribute('value', $value);
+        }
+        if (!$field instanceof UnsupportedNameAttributeInterface) {
+            $field->setName($name);
+        }
         foreach ($definition as $key => $attr) {
             if (!is_string($key)) {
                 continue;
             }
-            $field->setAttribute($key, $definition);
-        }
-        if (!$field instanceof UnsupportedNameAttributeInterface) {
-            $field->setName($name);
+            $field->setAttribute($key, $attr);
         }
         return $field;
     }

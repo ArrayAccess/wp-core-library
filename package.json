@@ -37,6 +37,7 @@
         "codejar-linenumbers": "^1.0.1",
         "copyfiles": "^2.4.1",
         "eslint": "^8.54.0",
+        "flatpickr": "^4.6.13",
         "grunt": "^1.6.1",
         "grunt-cli": "^1.4.3",
         "grunt-contrib-concat": "^2.1.0",

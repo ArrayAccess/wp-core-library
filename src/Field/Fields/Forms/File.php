@@ -73,7 +73,7 @@ class File extends Input implements FileFieldInterface
     /**
      * Set input type
      */
-    public function setType(string $type): static
+    public function setType(mixed $type): static
     {
         return $this;
     }
@@ -92,7 +92,7 @@ class File extends Input implements FileFieldInterface
      * disable label
      * @inheritdoc
      */
-    public function setLabel(?string $label): static
+    public function setLabel(mixed $label = null): static
     {
         $this->label = null;
         return $this;

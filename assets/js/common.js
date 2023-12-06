@@ -5,7 +5,7 @@
  */
 (function (w) {
     "use strict";
-
+    let $ = window.jQuery || null;
     const createDiv = (className, content, ...child) => {
         const div = document.createElement('div');
         div.className = className;
@@ -16,6 +16,27 @@
             div.appendChild(child[i]);
         }
         return div;
+    };
+
+    const dispatchReadyEvent = (el, eventName, ...detail) => {
+        if (!el || (!(el instanceof HTMLElement) && !(el instanceof Window))) {
+            return;
+        }
+        if ($?.fn.trigger) {
+            $(el).trigger(eventName, [el, ...detail]);
+            return;
+        }
+        el.dispatchEvent(new CustomEvent(eventName, {detail: [el, ...detail]}));
+    };
+
+    const ready = (fn) => {
+        if (w.document.readyState === "complete" || (w.document.readyState !== "loading")) {
+            // if document is already ready, then run
+            fn();
+        } else {
+            // if document hasn't finished loading, add event listener
+            w.document.addEventListener("DOMContentLoaded", fn);
+        }
     };
     const isInputForm = (el) => el instanceof HTMLElement && ['TEXTAREA', 'INPUT'].indexOf(el.tagName) !== -1;
     const select = (selector, context) => (context || document)?.querySelector(selector);
@@ -57,9 +78,31 @@
 
     const init = () => {
         //const wp = w.wp||null;
-        const $ = w.jQuery || null;
+        $ = w.jQuery || null;
+
+        dispatchReadyEvent(window, 'arrayaccess-common-ready');
+        if (w['flatpickr'] && typeof w['flatpickr'] === 'function') {
+            selects('input[data-flatpickr=true]').forEach((e) => {
+                const options = e.getAttribute('data-flatpickr-options') || '{}';
+                let _options = {};
+                try {
+                    if (typeof options === 'string') {
+                        _options = JSON.parse(options);
+                    }
+                    if (typeof _options !== 'object') {
+                        _options = {};
+                    }
+                } catch (err) {
+                    // skip
+                }
+                w['easepick'].create(e, _options);
+                dispatchReadyEvent(e, 'easepick-ready', _options);
+            });
+        }
+
         /* Code Editor */
-        if (typeof w.CodeJar === 'function' && typeof w['hljs'] === 'object'
+        if (typeof w.CodeJar === 'function'
+            && typeof w['hljs'] === 'object'
             && typeof w['hljs'].highlightElement === 'function'
         ) {
             const
@@ -336,7 +379,12 @@
                 return editor;
             };
             selects('[data-code-editor=codejar]')
-                .forEach(e => codeEditorRender(e));
+                .forEach((e) => {
+                    if (!codeEditorRender(e)) {
+                        return;
+                    }
+                    dispatchReadyEvent(e, 'code-editor-ready', e.codeJar);
+                });
             selects('[data-code-highlight]')
                 .forEach((e) => {
                     const language = e.getAttribute('data-code-highlight') || 'plaintext';
@@ -346,6 +394,7 @@
                     e.innerHTML = HighLight
                         .highlight(e.textContent, {language, ignoreIllegals: true})
                         .value;
+                    dispatchReadyEvent(e, 'code-highlight-ready');
                 });
             window.codeJarWindowInit = (_textarea, props) => codeEditorRender(_textarea, props);
             Object.freeze(window.codeJarWindowInit);
@@ -357,14 +406,22 @@
                 if (typeof _this.wpColorPicker !== "function") {
                     return;
                 }
-                const options = _this.data('color-picker-options');
-                if (!options || typeof options !== 'object') {
-                    return;
+                let options = {};
+                try {
+                    options = _this.attr('data-color-picker-options');
+                    if (typeof options === 'string') {
+                        options = JSON.parse(options);
+                    }
+                    if (typeof options !== 'object') {
+                        options = {};
+                    }
+                } catch (err) {
+                    // skip
                 }
                 options.change = function (event, ui) {
                     $(this).trigger('wp-color-picker-change', [event, ui]);
                 };
-                _this.trigger('wp-color-picker-ready', [_this, _this.wpColorPicker(options)]);
+                _this.trigger('wp-color-picker-ready', [_this[0], _this.wpColorPicker(options)]);
                 _this
                     .closest('.wp-picker-container')
                     .addClass('aa-wp-color-picker-ready');
@@ -380,7 +437,7 @@
                 if (!options || typeof options !== 'object') {
                     options = {};
                 }
-                _this.trigger('selectize-ready', [_this, _this.selectize(options)]);
+                _this.trigger('selectize-ready', [_this[0], _this.selectize(options)]);
             });
         }
         if ($) {
@@ -429,14 +486,17 @@
                 }
             });
         }
+        return true;
     };
 
-    // init on document ready
-    if (w.document.readyState === "complete" || (w.document.readyState !== "loading")) {
-        // if document is already ready, then init
-        init();
-    } else {
-        // if document hasn't finished loading, add event listener
-        w.document.addEventListener("DOMContentLoaded", init);
-    }
+    ready(() => {
+        const scriptIdSelector = 'script[id^=arrayaccess][async]';
+        const asyncScripts = selects(scriptIdSelector);
+        !asyncScripts.length ? init() : Promise.all(asyncScripts.map((e) => {
+            return new Promise((resolve, reject) => {
+                e.onload = resolve;
+                e.onerror = reject;
+            });
+        })).then(init).catch(init);
+    });
 })(window);

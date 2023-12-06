@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
+use function is_string;
 use function spl_object_hash;
 
 class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
@@ -34,8 +35,14 @@ class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface
      * @param string $imageUrl The image url.
      * @return ?FieldInterface
      */
-    public function add(string|int|float $name, string|int|float $value, string $imageUrl): ?FieldInterface
+    public function add(mixed $name, mixed $value, mixed $imageUrl): ?FieldInterface
     {
+        if (!is_scalar($value)
+            || !is_scalar($name)
+            || !is_string($imageUrl)
+        ) {
+            return null;
+        }
         $name = (string)$name;
         $inputName = $this->getName() . '[' . $name . ']';
         $checkbox = new ImageCheckbox($inputName);

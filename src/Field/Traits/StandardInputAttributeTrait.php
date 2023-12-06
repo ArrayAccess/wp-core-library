@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Field\Traits;
 
+use function is_scalar;
+
 trait StandardInputAttributeTrait
 {
     /**
@@ -15,12 +17,14 @@ trait StandardInputAttributeTrait
     /**
      * Set input value
      *
-     * @param string|int|float $val
+     * @param mixed $val
      * @return $this
      */
-    public function setValue(string|int|float $val): static
+    public function setValue(mixed $val): static
     {
-        $this->setAttribute('value', $val);
+        if (is_scalar($val)) {
+            $this->setAttribute('value', $val);
+        }
         return $this;
     }
 

@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedNameAttributeInter
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\UnsupportedValueAttributeInterface;
 use ArrayAccess\WP\Libraries\Core\Util\Filter;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+use DateTimeInterface;
 use ReflectionClass;
 use ReflectionObject;
 use Stringable;
@@ -116,6 +117,11 @@ abstract class AbstractField implements FieldInterface
     private int $increment;
 
     /**
+     * @var string The date format.
+     */
+    protected string $dateFormat = 'Y-m-d H:i:s';
+
+    /**
      * @inheritdoc
      */
     public function __construct(?string $name = null)
@@ -165,6 +171,23 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
+    public function setDateFormat(string $format): static
+    {
+        $this->dateFormat = $format;
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getDateFormat(): string
+    {
+        return $this->dateFormat;
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getId(): string
     {
         if ($this->id === '') {
@@ -183,8 +206,11 @@ abstract class AbstractField implements FieldInterface
     /**
      * @inheritdoc
      */
-    public function setLabel(?string $label): static
+    public function setLabel(mixed $label = null): static
     {
+        if (!is_string($label) && !is_null($label)) {
+            return $this;
+        }
         $this->label = $label;
         return $this;
     }
@@ -440,7 +466,9 @@ abstract class AbstractField implements FieldInterface
         ) {
             unset($attributes['name']);
         }
-
+        if (($attributes['value']??null) instanceof DateTimeInterface) {
+            $attributes['value'] = $attributes['value']->format($this->getDateFormat());
+        }
         $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
         $label = $this->getLabel();
         if (is_callable([$this, 'getOverrideLabel'])) {
@@ -538,6 +566,10 @@ abstract class AbstractField implements FieldInterface
                 return true;
             }
         }
+
+        if ($type === 'date' && $value instanceof DateTimeInterface) {
+            return true;
+        }
         return ! empty($value) || !HtmlAttributes::isBooleanAttributeEnabled(
             'required',
             $required
@@ -570,8 +602,8 @@ abstract class AbstractField implements FieldInterface
             if (!$property->isInitialized($this)) {
                 continue;
             }
-            $value = $property->getValue($this);
-            $key = $property->getName();
+            $value = $isPrivate ? $property->getValue($this) : $this->{$property->getName()};
+            $key   = $property->getName();
             $isAttribute = $key === 'attributes';
             // Redact the options property.
             if ($key === 'options' && is_array($value)) {
@@ -589,11 +621,13 @@ abstract class AbstractField implements FieldInterface
                             $v[$optionsKey] = $optionsValue;
                         }
                         $val[$k] = $v;
+                        continue;
                     }
+                    $val[$k] = $v;
                 }
                 $value = $val;
             }
-            if ($currentClass !== $property->getDeclaringClass()->getName()) {
+            if ($isPrivate && $currentClass !== $property->getDeclaringClass()->getName()) {
                 $key = $property->getDeclaringClass()->getName() . '::' . $key;
             }
             if ($isPrivate || !$property->isPublic()) {

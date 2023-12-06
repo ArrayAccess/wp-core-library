@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Util;
 
+use Closure;
+use DateTimeInterface;
 use JsonSerializable;
 use Stringable;
 use function array_filter;
@@ -390,6 +392,10 @@ class HtmlAttributes
         mixed $value,
         bool $allowHtmlName = false
     ) : ?array {
+        // attribute value does not support closure
+        if ($value instanceof Closure) {
+            return null;
+        }
         if (!is_string($name) || ($name = trim($name)) === '') {
             return null;
         }
@@ -425,6 +431,8 @@ class HtmlAttributes
             } else {
                 $value = $value ? '1' : '0';
             }
+        } elseif ($value instanceof DateTimeInterface) {
+            $value = $value->format('Y-m-d H:i:s');
         } elseif ($value instanceof Stringable || is_scalar($value)) {
             // if it was a float & more than PHP_INT_MAX commonly contain E,
             // convert with bc function

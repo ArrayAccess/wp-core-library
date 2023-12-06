@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
+use function is_scalar;
 use function spl_object_hash;
 
 class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
@@ -33,11 +34,16 @@ class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFi
      * @param string|null $label
      * @return ?FieldInterface
      */
-    public function add(string|int|float $value, ?string $label = null): ?FieldInterface
+    public function add(mixed $value, mixed $label = null): ?FieldInterface
     {
+        if (!is_scalar($value)) {
+            return null;
+        }
+        $label = !is_scalar($label) ? null : $label;
+        $label ??= (string) $value;
         $radio = new Radio($this->getName());
         $radio->setValue($value);
-        $radio->setLabel((string) ($label??$value));
+        $radio->setLabel($label);
         $this->remove($value);
         return $this->addValue($radio);
     }

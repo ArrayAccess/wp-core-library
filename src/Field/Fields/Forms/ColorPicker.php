@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 use ArrayAccess\WP\Libraries\Core\Field\Abstracts\AbstractField;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\StandardInputAttributeTrait;
+use ArrayAccess\WP\Libraries\Core\Service\Services\DefaultAssets;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use function is_string;
 use function preg_match;
@@ -171,6 +172,11 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         if (!wp_style_is('wp-color-picker')) {
             wp_enqueue_style('wp-color-picker');
         }
+        if (!wp_style_is('arrayaccess-common')) {
+            DefaultAssets::getInstance()
+                ->enqueueAsset('arrayaccess-common');
+        }
+
         return $this;
     }
 }

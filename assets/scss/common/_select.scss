@@ -1,12 +1,18 @@
-select[data-selectize="true"] {
+
+select.aa-field[data-selectize="true"] {
     display: block;
     width: var(--aa-base-block-width);
     margin: var(--aa-base-block-margin);
     max-width: 100%;
+    padding:0;
+    option {
+        padding: 5px 10px;
+    }
 }
 
 .selectize-control {
     z-index: 5;
+
     .selectize-input {
         width: var(--aa-base-block-width);
         margin: var(--aa-base-block-margin);

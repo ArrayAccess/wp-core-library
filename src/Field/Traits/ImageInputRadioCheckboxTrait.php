@@ -6,6 +6,7 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Traits;
 use function force_balance_tags;
 use function is_bool;
 use function is_scalar;
+use function is_string;
 use function sprintf;
 
 trait ImageInputRadioCheckboxTrait
@@ -26,12 +27,10 @@ trait ImageInputRadioCheckboxTrait
      * @param ?string $name
      * @param ?string $imageUrl
      */
-    public function __construct(?string $name = null, ?string $imageUrl = '')
+    public function __construct(?string $name = null, mixed $imageUrl = '')
     {
         parent::__construct($name);
-        if ($imageUrl !== null) {
-            $this->setImageUrl($imageUrl);
-        }
+        $this->setImageUrl($imageUrl);
     }
 
     /**
@@ -40,8 +39,11 @@ trait ImageInputRadioCheckboxTrait
      * @param string $imageUrl the image url
      * @return $this for chaining
      */
-    public function setImageUrl(string $imageUrl): static
+    public function setImageUrl(mixed $imageUrl): static
     {
+        if (!is_string($imageUrl)) {
+            return $this;
+        }
         $this->imageUrl = $imageUrl;
         return $this;
     }

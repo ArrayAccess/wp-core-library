@@ -96,6 +96,12 @@ final class Services implements ServicesInterface
     public function __construct()
     {
         foreach (self::DEFAULT_SERVICES as $service) {
+            // if default assets has instance, use the instance
+            if ($service === DefaultAssets::class
+                && DefaultAssets::hasInstance()
+            ) {
+                $service = DefaultAssets::getInstance();
+            }
             $this->add($service);
             $serviceId = $this->getServiceId($service);
             if (!$serviceId) {

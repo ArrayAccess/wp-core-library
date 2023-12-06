@@ -20,14 +20,6 @@ class Nonce extends Hidden
     protected ?string $nonce = null;
 
     /**
-     * Set input type
-     */
-    public function setType(string $type): static
-    {
-        return $this;
-    }
-
-    /**
      * Set nonce name
      *
      * @param string $nonceName nonce name

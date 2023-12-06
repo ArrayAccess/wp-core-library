@@ -17,12 +17,18 @@ use ArrayAccess\WP\Libraries\Core\Field\Traits\AppendedValuesTrait;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 use ArrayAccess\WP\Libraries\Core\Util\HttpRequest\Server;
+use function explode;
 use function force_balance_tags;
+use function in_array;
 use function is_string;
+use function parse_str;
 use function remove_query_arg;
 use function set_url_scheme;
 use function spl_object_hash;
+use function str_contains;
 use function strtolower;
+use function strtoupper;
+use function trim;
 use function wp_removable_query_args;
 
 /**
@@ -125,7 +131,7 @@ class Form extends AbstractField implements
     /**
      * @inheritdoc
      */
-    public function setLabel(?string $label): static
+    public function setLabel(mixed $label = null): static
     {
         return $this;
     }
@@ -196,17 +202,36 @@ class Form extends AbstractField implements
      */
     public function setMethod(?string $method = null): static
     {
-        $method = is_string($method) ? trim($method) : null;
-        if (!$method) {
-            $this->removeAttribute('method');
-            return $this;
+        return $this->setAttribute('method', $method);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setAttribute(string $attributeName, mixed $value): static
+    {
+        $attributeName = HtmlAttributes::filterAttributeName($attributeName);
+        if ($attributeName === 'method') {
+            $value = is_string($value) ? trim($value) : null;
+            if (!$value) {
+                $this->removeAttribute('method');
+                return $this;
+            }
+            $value = strtoupper($value);
+            if (!in_array($value, ['GET', 'POST'])) {
+                return $this;
+            }
         }
-        $method = strtolower($method);
-        if (!in_array($method, ['get', 'post'])) {
-            return $this;
-        }
-        $this->setAttribute('method', $method);
-        return $this;
+        return parent::setAttribute($attributeName, $value);
+    }
+
+    /**
+     * @return ?string
+     */
+    public function getMethod(): ?string
+    {
+        $method = $this->getAttribute('method');
+        return is_string($method) ? strtoupper($method) : null;
     }
 
     /**
@@ -309,6 +334,7 @@ class Form extends AbstractField implements
         $attributes = $this->getAttributes();
         $attributes['action'] = $attributes['action'] ?? null;
         if ($attributes['action'] === null) {
+            /** @noinspection HttpUrlsUsage */
             $scheme = is_ssl() ? 'https://' : 'http://';
             $host = Server::string('HTTP_HOST');
             $requestUri = Server::string('REQUEST_URI');
@@ -328,6 +354,22 @@ class Form extends AbstractField implements
                 str_contains($description, '<') ? force_balance_tags($description) : esc_html($description)
             ) . $html;
         }
+        $method = $this->getMethod();
+        if ($method !== 'POST'
+            && $attributes['action']
+            && str_contains($attributes['action'], '?')
+            && !isset($attributes['page'])
+        ) {
+            $ex = explode('?', $attributes['action'], 2)[1]??'';
+            parse_str($ex, $query);
+            if (isset($query['page']) && is_string($query['page'])) {
+                $html = sprintf(
+                    '<input type="hidden" name="page" value="%s" />',
+                    esc_attr($query['page'])
+                ) . $html;
+            }
+        }
+
         $attributes['html'] = $html;
 
         return HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);

@@ -35,6 +35,98 @@
         return data.join("\n");
     }
 
+    /**
+     * Replace css theme
+     *
+     * @param src
+     * @param filepath
+     * @param prefix
+     * @param defaultTheme
+     * @param preventContains
+     * @returns {*|string}
+     */
+    function cssThemeReplace(src, filepath, prefix, defaultTheme = 'default', preventContains = null) {
+        if (filepath.match(/\.min\.css$/)) {
+            return '';
+        }
+        if (preventContains && filepath.match(preventContains)) {
+            return src;
+        }
+        // add prefix before .hljs
+        const fileName = filepath
+            .replace(/^.+[\\/]([^\\/]+)(?:\.min)?\.css$/g, '$1')
+            .replace('_', '-')
+            .trim()
+            .trim('-');
+        src = cleanCssComment(src);
+        const isDefault = fileName === defaultTheme;
+        const banner = isDefault
+            ? `/* Default */\n` : `/* theme : ${fileName} */\n`;
+        function fixIndentation(cssCode) {
+            let level = 0;
+            let formattedCode = '';
+
+            const lines = cssCode.split('\n');
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                if (line.includes('}')) {
+                    level--;
+                }
+
+                formattedCode += '    '.repeat(level) + line + '\n';
+
+                if (line.includes('{')) {
+                    level++;
+                }
+            }
+
+            return formattedCode;
+        }
+        if (isDefault) {
+            return banner + fixIndentation(src);
+        }
+        function replace(src, checked) {
+            const a = src.split("\n");
+            const firstRegexP= new RegExp(`^\\s*\\.${prefix}-`);
+            const themeRegexP = new RegExp(`^\\s*([a-zA-Z.].+)?\\.${prefix}.*[,{]`, 'g');
+            let i;
+            for (i in a) {
+                // hljs contain invalid
+                if (a[i].match(firstRegexP) && !a[i].match(/[,{]\s*$/)) {
+                    a[i] += ',';
+                }
+                if (a[i].match(/\.theme-/g) || ! a[i].match(themeRegexP)) {
+                    continue;
+                }
+
+                a[i] = a[i].replace(/(^\s*|}\s*)/, (m, a) => {
+                    return a + '.theme-' + fileName + ' ';
+                });
+            }
+            src = a.join("\n");
+            if (checked) {
+                return banner + fixIndentation(src);
+            }
+            if (!src.match(/(\.theme-)/g)) {
+                src = src
+                    .replace(
+                        /([}{,]|\*\/)/g,
+                        "$1\n"
+                    )
+                    .replace(/[}]/g, "\n}")
+                    .replace(/([a-zA-Z)])(\{)/g, '$1 $2')
+                    .replace(/([{;]\n)([a-zA-Z\-_])/g, '$1  $2')
+                    .replace(/(:[^;},]+)\n}/g, "$1;\n}")
+                    .replace(/\n+/g, "\n");
+                return replace(src, true);
+            }
+            return banner + fixIndentation(src);
+        }
+        return replace(src);
+    }
+
     module.exports = (grunt) => {
         // noinspection JSUnresolvedReference
         grunt.initConfig({
@@ -63,6 +155,17 @@
                             src    : ['**/*.min.js'],
                             dest   : 'dist/js',
                             filter : 'isFile'
+                        }
+                    ]
+                },
+                vendor: {
+                    files: [
+                        {
+                            expand : true,
+                            cwd    : 'node_modules/@highlightjs/cdn-assets/styles',
+                            src    : ['*.png', '*.gif', '*.jpg', '*.jpeg', '*.svg', '*.woff', '*.woff2', '*.ttf', '*.eot'],
+                            dest   : 'dist/vendor/highlightjs',
+                            filter : 'isFile'
                         },
                         {
                             expand : true,
@@ -77,100 +180,64 @@
                             src    : ['selectize.default.css'],
                             dest   : 'dist/vendor/selectize',
                             filter : 'isFile'
-                        }
-                    ]
-                },
-                // copy highlightjs image & font assets
-                highlightjs: {
-                    files: [
+                        },
                         {
                             expand : true,
-                            cwd    : 'node_modules/@highlightjs/cdn-assets/styles',
-                            src    : ['*.png', '*.gif', '*.jpg', '*.jpeg', '*.svg', '*.woff', '*.woff2', '*.ttf', '*.eot'],
-                            dest   : 'dist/vendor/highlightjs',
-                            filter : 'isFile'
+                            cwd    : "node_modules/flatpickr/dist/l10n",
+                            src    : ["*.js", "!*.min.js"],
+                            dest   : "dist/vendor/flatpickr/l10n",
+                            filter : "isFile"
                         }
                     ]
                 }
             },
             concat: {
+                codejar: {
+                    files: {
+                        "dist/vendor/codejar/codejar.bundle.css": [
+                            "node_modules/codejar-linenumbers/js/codejar-linenumbers.css"
+                        ]
+                    }
+                },
+                flatpickrCSS: {
+                    options: {
+                        process: (src, filePath) => cssThemeReplace(
+                            src,
+                            filePath,
+                            'flatpickr',
+                            'flatpickr',
+                            /\/+plugins\/+.+\.css$/g
+                        )
+                    },
+                    files: {
+                        "dist/vendor/flatpickr/flatpickr.bundle.css": [
+                            "node_modules/flatpickr/dist/flatpickr.css",
+                            "node_modules/flatpickr/dist/plugins/**/*.css",
+                            "node_modules/flatpickr/dist/themes/*.css",
+                            "!node_modules/flatpickr/dist/themes/*.min.css",
+                            "!node_modules/flatpickr/dist/plugins/**/*.min.css"
+                        ]
+                    }
+                },
+                flatpickr: {
+                    files: {
+                        "dist/vendor/flatpickr/flatpickr.bundle.js": [
+                            "node_modules/flatpickr/dist/flatpickr.js",
+                            "node_modules/flatpickr/dist/plugins/**/*.js",
+                            "node_modules/flatpickr/dist/plugins/*.js",
+                            "!node_modules/flatpickr/dist/plugins/**/*.min.js",
+                            "!node_modules/flatpickr/dist/plugins/*.min.js"
+                        ]
+                    }
+                },
                 highlightjsCSS: {
                     options: {
-                        process: function(src, filepath) {
-                            if (filepath.match(/\.min\.css$/)) {
-                                return '';
-                            }
-                            // add prefix before .hljs
-                            const fileName = filepath
-                                .replace(/^.+[\\/]([^\\/]+)(?:\.min)?\.css$/g, '$1');
-                            src = cleanCssComment(src);
-                            const isDefault = fileName === 'default';
-                            const banner = isDefault
-                                ? `/* Default */\n` : `/* theme : ${fileName} */\n`;
-                            function fixIndentation(cssCode) {
-                                let level = 0;
-                                let formattedCode = '';
-
-                                const lines = cssCode.split('\n');
-
-                                for (let i = 0; i < lines.length; i++) {
-                                    const line = lines[i].trim();
-
-                                    if (line.includes('}')) {
-                                        level--;
-                                    }
-
-                                    formattedCode += '    '.repeat(level) + line + '\n';
-
-                                    if (line.includes('{')) {
-                                        level++;
-                                    }
-                                }
-
-                                return formattedCode;
-                            }
-                            if (isDefault) {
-                                return banner + fixIndentation(src);
-                            }
-                            function replace(src, checked) {
-                                const a = src.split("\n");
-                                let i;
-                                for (i in a) {
-                                    // hljs contain invalid
-                                    if (a[i].match(/^\s*\.hljs-/) && !a[i].match(/[,{]\s*$/)) {
-                                        a[i] += ',';
-                                    }
-                                    if (a[i].match(/\.theme-/g)
-                                        || ! a[i].match(/^\s*([a-zA-Z.].+)?\.hljs.*[,{]/g)
-                                    ) {
-                                        continue;
-                                    }
-
-                                    a[i] = a[i].replace(/(^\s*|}\s*)/, (m, a) => {
-                                        return a + '.theme-' + fileName + ' ';
-                                    });
-                                }
-                                src = a.join("\n");
-                                if (checked) {
-                                    return banner + fixIndentation(src);
-                                }
-                                if (!src.match(/(\.theme-)/g)) {
-                                    src = src
-                                        .replace(
-                                            /([}{,]|\*\/)/g,
-                                            "$1\n"
-                                        )
-                                        .replace(/[}]/g, "\n}")
-                                        .replace(/([a-zA-Z)])(\{)/g, '$1 $2')
-                                        .replace(/([{;]\n)([a-zA-Z\-_])/g, '$1  $2')
-                                        .replace(/(:[^;},]+)\n}/g, "$1;\n}")
-                                        .replace(/\n+/g, "\n");
-                                    return replace(src, true);
-                                }
-                                return banner + fixIndentation(src);
-                            }
-                            return replace(src);
-                        }
+                        process: (src, filePath) => cssThemeReplace(
+                            src,
+                            filePath,
+                            'hljs',
+                            'default'
+                        )
                     },
                     files: {
                         "dist/vendor/highlightjs/highlight.bundle.css": [
@@ -195,13 +262,6 @@
                         "node_modules/@highlightjs/cdn-assets/languages/*.js"
                     ],
                     dest: "dist/vendor/highlightjs/highlight.bundle.js"
-                },
-                codejar: {
-                    files: {
-                        "dist/vendor/codejar/codejar.bundle.css": [
-                            "node_modules/codejar-linenumbers/js/codejar-linenumbers.css"
-                        ]
-                    }
                 },
                 // codejar just need replace export function
                 editor: {
@@ -253,39 +313,34 @@
                             src    : ["**/*.js", "!**/*.min.js"],
                             dest   : 'dist/vendor/selectize',
                             ext    : '.min.js'
+                        },
+                        {
+                            expand : true,
+                            cwd    : "dist/vendor/flatpickr/l10n",
+                            src    : ["*.js", "!*.min.js"],
+                            dest   : "dist/vendor/flatpickr/l10n",
+                            ext    : ".min.js"
                         }
                     ]
                 },
-                highlightjs: {
+                vendor: {
                     options: {
                         mangle    : true,
                         sourceMap : false
                     },
                     files: [
+                        {
+                            src  : "dist/vendor/flatpickr/flatpickr.bundle.js",
+                            dest : 'dist/vendor/flatpickr/flatpickr.bundle.min.js'
+                        },
                         {
                             src  : "dist/vendor/highlightjs/highlight.bundle.js",
                             dest : 'dist/vendor/highlightjs/highlight.bundle.min.js'
-                        }
-                    ]
-                },
-                codejar: {
-                    options: {
-                        mangle    : true,
-                        sourceMap : false
-                    },
-                    files: [
+                        },
                         {
                             src  : "node_modules/codejar/dist/codejar.js",
                             dest : 'dist/vendor/codejar/codejar.bundle.min.js'
-                        }
-                    ]
-                },
-                editor: {
-                    options: {
-                        mangle    : true,
-                        sourceMap : false
-                    },
-                    files: [
+                        },
                         {
                             src  : "dist/js/editor.bundle.js",
                             dest : 'dist/js/editor.bundle.min.js'
@@ -293,29 +348,25 @@
                     ]
                 }
             },
+            // minify css, called after concat
             cssmin: {
-                // minify css, called after concat
-                highlightjs: {
+                vendor: {
+                    options: {
+                        keepSpecialComments: 0
+                    },
                     files: [
                         {
-                            options: {
-                                keepSpecialComments: 0
-                            },
+                            src  : "dist/vendor/flatpickr/flatpickr.bundle.css",
+                            dest : 'dist/vendor/flatpickr/flatpickr.bundle.min.css'
+                        },
+                        {
                             src  : "dist/vendor/highlightjs/highlight.bundle.css",
                             dest : 'dist/vendor/highlightjs/highlight.bundle.min.css'
-                        }
-                    ]
-                },
-                codejar: {
-                    files: [
+                        },
                         {
                             src  : "dist/vendor/codejar/codejar.bundle.css",
                             dest : 'dist/vendor/codejar/codejar.bundle.min.css'
-                        }
-                    ]
-                },
-                selectize: {
-                    files: [
+                        },
                         {
                             src  : "dist/vendor/selectize/selectize.default.css",
                             dest : 'dist/vendor/selectize/selectize.default.min.css'

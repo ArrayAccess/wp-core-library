@@ -252,9 +252,8 @@ class CodeEditor extends Textarea
             || !wp_style_is('arrayaccess-common')
             || !wp_style_is('arrayaccess-highlightjs')
         ) {
-            $defaultAssets = DefaultAssets::getInstance();
-            $defaultAssets->init();
-            $defaultAssets->enqueueAsset('arrayaccess-editor');
+            DefaultAssets::getInstance()
+                ->enqueueAsset('arrayaccess-editor');
         }
 
         return $this;

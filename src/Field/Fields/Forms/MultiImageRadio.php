@@ -8,6 +8,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\FormFieldTypeInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Interfaces\MultipleFieldInterface;
 use ArrayAccess\WP\Libraries\Core\Field\Traits\MultiFieldSetterTrait;
+use function is_string;
 use function spl_object_hash;
 
 class MultiImageRadio extends AbstractField implements MultipleFieldInterface, FormFieldTypeInterface
@@ -33,8 +34,11 @@ class MultiImageRadio extends AbstractField implements MultipleFieldInterface, F
      * @param string $imageUrl The image url.
      * @return ?FieldInterface
      */
-    public function add(string|int|float $value, string $imageUrl): ?FieldInterface
+    public function add(mixed $value, mixed $imageUrl): ?FieldInterface
     {
+        if (!is_scalar($value) || !is_string($imageUrl)) {
+            return null;
+        }
         $radio = new ImageRadio($this->getName(), $imageUrl);
         $radio->setValue($value);
         return $this->addValue($radio);

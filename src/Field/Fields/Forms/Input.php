@@ -24,8 +24,11 @@ class Input extends AbstractField implements FormFieldTypeInterface
      * @param string $type input type
      * @return $this for chaining
      */
-    public function setType(string $type): static
+    public function setType(mixed $type): static
     {
+        if (!is_string($type)) {
+            return $this;
+        }
         $this->setAttribute('type', trim($type)?:$this->attributes['type']);
         return $this;
     }

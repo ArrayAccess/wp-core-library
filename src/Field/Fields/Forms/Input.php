@@ -12,6 +12,11 @@ class Input extends AbstractField implements FormFieldTypeInterface
     use StandardInputAttributeTrait;
 
     /**
+     * @var string $tagName the tag name
+     */
+    protected string $tagName = 'input';
+
+    /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [

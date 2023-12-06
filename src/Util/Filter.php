@@ -1165,6 +1165,32 @@ class Filter
         }
         return empty($acceptedMethods) ? null : $acceptedMethods;
     }
+    public static function filterStyle(mixed $style): ?array
+    {
+        if (is_string($style)) {
+            return [$style];
+        }
+        if (!is_array($style) && is_iterable($style)) {
+            $style = iterator_to_array($style);
+        }
+        if (!is_array($style)) {
+            return null;
+        }
+        foreach ($style as $key => $value) {
+            if (!is_string($value) || ! is_string($key)) {
+                unset($style[$key]);
+                continue;
+            }
+            $value = trim($value);
+            if ($value === '') {
+                unset($style[$key]);
+                continue;
+            }
+            $style[$key] = $key . ':' . $value;
+        }
+
+        return empty($style) ? null : $style;
+    }
 
     /**
      * Filter input accept

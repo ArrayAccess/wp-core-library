@@ -9,6 +9,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\CodeEditor;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ColorPicker;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Date;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\DateTime;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\DateTimeLocal;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Email;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\File;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Hidden;
@@ -168,6 +169,12 @@ class Builder
                 if (is_string($format)) {
                     $field->setDateFormat($format);
                 }
+                break;
+            case 'datetime-local':
+            case 'datetime-local-input':
+            case 'datetimelocal':
+            case 'datetimelocal-input':
+                $field = new DateTimeLocal($name);
                 break;
             case 'email':
             case 'email-input':

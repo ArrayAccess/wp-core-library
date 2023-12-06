@@ -13,8 +13,14 @@ class Option extends AbstractField implements
     FormFieldTypeInterface,
     UnsupportedNameAttributeInterface
 {
+    /**
+     * @var string $tagName the tag name
+     */
     protected string $tagName = 'option';
 
+    /**
+     * @var ?string $staticType the static type
+     */
     protected ?string $staticType = 'option';
 
     /**
@@ -95,12 +101,15 @@ class Option extends AbstractField implements
      */
     public function getValue(): ?string
     {
-        return $this->getAttribute('value');
+        $value = $this->getAttribute('value');
+        if ($value === null) {
+            return null;
+        }
+        return (string)$value;
     }
 
     /**
-     * @param bool|null $inline
-     * @return string
+     * @inheritdoc
      */
     public function build(?bool $inline = null): string
     {

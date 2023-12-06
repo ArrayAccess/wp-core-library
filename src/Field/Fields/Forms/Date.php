@@ -42,6 +42,26 @@ class Date extends Input
     /**
      * @inheritdoc
      */
+    public function setAttribute(string $attributeName, mixed $value): static
+    {
+        if ($attributeName === 'data-flatpickr-date-format'
+            || $attributeName === 'date-format'
+            || $attributeName === 'format'
+        ) {
+            $this->dateFormat = $value;
+            return $this;
+        }
+        if ($attributeName === 'settings'
+            || $attributeName === 'setting'
+        ) {
+            $attributeName = 'data-flatpickr-options';
+        }
+        return parent::setAttribute($attributeName, $value);
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected function doEnqueueAssets(): static
     {
         if (!wp_script_is('flatpickr-bundle')

@@ -316,6 +316,19 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
         $callback = function () use ($action, &$callback, $handle, $type) {
             remove_action($action, $callback, 99999);
             if ($type && !isset($this->assets[$type][$handle])) {
+                // register global assets if needed
+                if ($type === 'js'
+                    && wp_script_is($handle, 'registered')
+                    && !wp_script_is($handle)
+                ) {
+                    wp_enqueue_script($handle);
+                }
+                if ($type === 'css'
+                    && wp_style_is($handle, 'registered')
+                    && !wp_style_is($handle)
+                ) {
+                    wp_enqueue_style($handle);
+                }
                 return;
             }
 
@@ -334,6 +347,20 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                     && wp_script_is($handle, 'registered')
                 ) {
                     wp_enqueue_script($handle);
+                }
+            }
+            if (($type === 'js' || $type === null) && !isset($this->assets['js'][$handle])) {
+                if (wp_script_is($handle, 'registered')
+                    && !wp_script_is($handle)
+                ) {
+                    wp_enqueue_script($handle);
+                }
+            }
+            if (($type === 'css' || $type === null) && !isset($this->assets['css'][$handle])) {
+                if (wp_style_is($handle, 'registered')
+                    && !wp_style_is($handle)
+                ) {
+                    wp_enqueue_style($handle);
                 }
             }
         };

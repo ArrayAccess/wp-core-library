@@ -77,6 +77,10 @@ class ColorPicker extends AbstractField implements FormFieldTypeInterface
         if ($attributeName === 'data-color-picker') {
             return $this;
         }
+        if ($attributeName === 'data-color-picker-options') {
+            $this->colorPickerOptions = $value;
+            return $this;
+        }
 
         return parent::setAttribute($attributeName, $value);
     }

@@ -14,8 +14,10 @@ use function htmlspecialchars;
 use function implode;
 use function in_array;
 use function intval;
+use function is_array;
 use function is_bool;
 use function is_float;
+use function is_int;
 use function is_iterable;
 use function is_numeric;
 use function is_scalar;
@@ -24,6 +26,8 @@ use function json_encode;
 use function preg_match;
 use function sanitize_html_class;
 use function sprintf;
+use function str_contains;
+use function str_starts_with;
 use function strtolower;
 use function trim;
 use const ENT_QUOTES;
@@ -341,11 +345,12 @@ class HtmlAttributes
      * Build attributes
      *
      * @param array $attributes
+     * @param string|null $tagName
      * @return string
      */
-    public static function buildAttributes(array $attributes) : string
+    public static function buildAttributes(array $attributes, ?string $tagName = null) : string
     {
-        return implode(' ', self::buildAttributesArray($attributes));
+        return implode(' ', self::buildAttributesArray($attributes, $tagName));
     }
 
     /**
@@ -440,7 +445,10 @@ class HtmlAttributes
                 $value = '';
             }
             $value = (string) $value;
-        } /** @noinspection PhpConditionAlreadyCheckedInspection */ elseif ($value instanceof JsonSerializable) {
+        } /** @noinspection PhpConditionAlreadyCheckedInspection */ elseif ($value instanceof JsonSerializable
+            // start with data- is json object
+            || is_array($value) && str_starts_with($lowerKey, 'data-')
+        ) {
             $value = json_encode($value, JSON_UNESCAPED_SLASHES);
         } elseif ($value === null || $value === INF) {
             // null is true
@@ -462,9 +470,21 @@ class HtmlAttributes
         }
         if ($lowerKey === 'accept') {
             $value = Filter::filterAccept($value);
-            $value = implode(',', $value);
+            $value = empty($value) ? null : implode(',', $value);
+        }
+        if ($lowerKey === 'style') {
+            $value = Filter::filterStyle($value);
+            if (!is_array($value)) {
+                return null;
+            }
+            $value = implode(';', $value);
         }
 
+        // default array value is json
+        if (is_array($value) && !empty($value)) {
+            $value = json_encode($value, JSON_UNESCAPED_SLASHES);
+        }
+        // if value is empty, skip!
         return is_string($value)
             ? [
                 'key' => self::HTML_ATTRIBUTES[$lowerKey]??$name,
@@ -476,15 +496,43 @@ class HtmlAttributes
      * Returning build attribute lists
      *
      * @param array $attributes
+     * @param ?string $tagName
      * @return array<string>
      */
-    public static function buildAttributesArray(array $attributes): array
+    public static function buildAttributesArray(array $attributes, ?string $tagName = null): array
     {
+        $tagName = $tagName ? self::filterAttributeName($tagName) : null;
+        $isDateTimeLocal = $tagName === 'input'
+            && isset($attributes['type'])
+            && $attributes['type'] === 'datetime-local';
         $attr = [];
         foreach ($attributes as $key => $value) {
-            $attrs = self::convertAttributeValue($key, $value);
-            if (!$attrs) {
-                continue;
+            // min max is exceptional for datetimelocal
+            if ($isDateTimeLocal && is_string($key)
+                && (strtolower($key) === 'min' || strtolower($key) === 'max')
+            ) {
+                if (is_int($value) || is_numeric($value) && !str_contains($value, '.')) {
+                    $value = date('Y-m-d\TH:i:s', (int) $value);
+                } elseif (is_string($value)) {
+                    $value = Consolidator::callNoError('strtotime', $value);
+                    if ($value === false) {
+                        continue;
+                    }
+                    $value = date('Y-m-d\TH:i:s', $value);
+                } elseif ($value instanceof DateTimeInterface) {
+                    $value = $value->format('Y-m-d\TH:i:s');
+                } else {
+                    continue;
+                }
+                $attr = [
+                    'key' => strtolower($key),
+                    'value' => $value
+                ];
+            } else {
+                $attrs = self::convertAttributeValue($key, $value);
+                if (!$attrs) {
+                    continue;
+                }
             }
             $key = $attrs['key'];
             $value = $attrs['value'];
@@ -560,7 +608,7 @@ class HtmlAttributes
         if (str_contains($html, '<')) {
             $html = force_balance_tags($html);
         }
-        $attributeString = self::buildAttributes($attributes);
+        $attributeString = self::buildAttributes($attributes, $tagName);
         $attributeString = $attributeString !== '' ? " $attributeString" : '';
         $html = in_array($tagName, self::SELF_CLOSING_TAG)
             ? "<{$tag}{$attributeString}>$html"

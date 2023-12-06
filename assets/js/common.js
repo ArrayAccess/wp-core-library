@@ -95,8 +95,7 @@
                 } catch (err) {
                     // skip
                 }
-                w['easepick'].create(e, _options);
-                dispatchReadyEvent(e, 'easepick-ready', _options);
+                dispatchReadyEvent(e, 'flatpickr-ready', w['flatpickr'](e, _options));
             });
         }
 
@@ -421,7 +420,7 @@
                 options.change = function (event, ui) {
                     $(this).trigger('wp-color-picker-change', [event, ui]);
                 };
-                _this.trigger('wp-color-picker-ready', [_this[0], _this.wpColorPicker(options)]);
+                dispatchReadyEvent(_this[0], 'wp-color-picker-ready', _this.wpColorPicker(options));
                 _this
                     .closest('.wp-picker-container')
                     .addClass('aa-wp-color-picker-ready');
@@ -433,11 +432,38 @@
                 if (typeof _this.selectize !== "function") {
                     return;
                 }
-                let options = _this.data('selectize-options');
-                if (!options || typeof options !== 'object') {
-                    options = {};
+                let options = {};
+                try {
+                    options = _this.attr('data-selectize-options');
+                    if (typeof options === 'string') {
+                        options = JSON.parse(options);
+                    }
+                    if (typeof options !== 'object') {
+                        options = {};
+                    }
+                } catch (err) {
+                    //
                 }
-                _this.trigger('selectize-ready', [_this[0], _this.selectize(options)]);
+                if (!options.plugins || typeof options.plugins !== 'object') {
+                    options.plugins = [
+                        'remove_button',
+                        'clear_button'
+                    ];
+                }
+                const hasSortable = (typeof ($?.fn.sortable) === 'function');
+                const plugins = [];
+                let i;
+                for (i in options.plugins) {
+                    if (!Object.prototype.hasOwnProperty.call(options.plugins, i)) {
+                        continue;
+                    }
+                    if (!hasSortable && options.plugins[i] === 'drag_drop') {
+                        continue;
+                    }
+                    plugins.push(options.plugins[i]);
+                }
+                options.plugins = plugins;
+                dispatchReadyEvent(_this[0], 'selectize-ready', _this.selectize(options));
             });
         }
         if ($) {

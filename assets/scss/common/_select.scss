@@ -4,17 +4,30 @@ select.aa-field[data-selectize="true"] {
     width: var(--aa-base-block-width);
     margin: var(--aa-base-block-margin);
     max-width: 100%;
-    padding:0;
-    option {
-        padding: 5px 10px;
+    &[multiple] {
+        padding-left: 0;
+        padding-right: 0;
+        option {
+            padding: 5px 10px;
+        }
+        optgroup {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            text-indent: 5px;
+            > option:first-child {
+                margin-top: 5px;
+            }
+            > option {
+                padding-left: 15px;
+            }
+        }
     }
 }
 
 .selectize-control {
     z-index: 5;
-
+    margin: var(--aa-base-block-margin);
     .selectize-input {
         width: var(--aa-base-block-width);
-        margin: var(--aa-base-block-margin);
     }
 }

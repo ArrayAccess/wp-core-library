@@ -17,13 +17,13 @@ trait StandardInputAttributeTrait
     /**
      * Set input value
      *
-     * @param mixed $val
+     * @param mixed $value
      * @return $this
      */
-    public function setValue(mixed $val): static
+    public function setValue(mixed $value): static
     {
-        if (is_scalar($val)) {
-            $this->setAttribute('value', $val);
+        if (is_scalar($value)) {
+            $this->setAttribute('value', $value);
         }
         return $this;
     }

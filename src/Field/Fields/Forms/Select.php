@@ -120,6 +120,11 @@ class Select extends AbstractField implements FormFieldTypeInterface
         ) {
             $this->setInfo($value);
         }
+        if ($attributeName === 'settings'
+            || $attributeName === 'setting'
+        ) {
+            $attributeName = 'data-selectize-options';
+        }
         return parent::setAttribute($attributeName, $value);
     }
 
@@ -576,6 +581,27 @@ class Select extends AbstractField implements FormFieldTypeInterface
             $defaultAssets = DefaultAssets::getInstance();
             $defaultAssets->init();
             $defaultAssets->enqueueAsset('selectize');
+            $attr = $this->getAttribute('data-selectize-options');
+            if (is_string($attr)) {
+                $attr = json_decode($attr, true);
+            }
+            $plugins = null;
+            if (is_array($attr)) {
+                $plugins = $attr['plugins']??null;
+                $plugins = is_string($plugins) ? [$plugins] : $plugins;
+            }
+
+            if (is_array($plugins)) {
+                $plugins = array_filter($plugins, fn ($e) => is_string($e));
+                $plugins = array_map('strtolower', $plugins);
+                $attr['plugins'] = $plugins;
+                $this->setAttribute('data-selectize-options', $attr);
+                if (in_array('drag_drop', $plugins, true)
+                    && !wp_script_is('jquery-ui-sortable')
+                ) {
+                    $defaultAssets->enqueueAsset('jquery-ui-sortable');
+                }
+            }
         }
 
         return $this;

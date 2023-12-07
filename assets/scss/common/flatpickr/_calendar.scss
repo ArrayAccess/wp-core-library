@@ -1,74 +1,113 @@
 @import "../../variables";
 @import "../../mixins";
 
+$flatpickr-theme-base-bg-color: #fff;
+$flatpickr-theme-base-active-hover-bg-color: #272828;
+$flatpickr-theme-base-active-bg-color-hex: 393939;
+$flatpickr-theme-base-active-bg-color: #393939;
+$flatpickr-theme-base-hover-bg-color: #393939;
+$flatpickr-theme-base-color: #393939;
+$flatpickr-theme-base-lighter-color: #555;
+$flatpickr-theme-base-lighten-color: #777;
+$flatpickr-theme-base-light-color: #e1e1e1;
+$flatpickr-theme-base-light-hover-color: #e6e6e6;
+$flatpickr-theme-base-hover-color: #fff;
+$flatpickr-theme-base-active-color: #fff;
+$flatpickr-theme-rgb-box-shadow: 0, 0, 0;
+$flatpickr-theme-base-disabled-color: #999;
+$flatpickr-theme-base-end-range-color: #858282;
+
 :root {
     --flat-pickr-calendar-width: 320px;
+    --flatpickr-calendar-border-radius: 4px;
     --flatpicker-calendar-animation: fpFadeInDown .3s cubic-bezier(.23, 1, .32, 1);
     --flatpicker-calendar-open-animation: fpFadeInDown .3s cubic-bezier(.23, 1, .32, 1);
+    @include themeRootVariable(
+        393939,
+        "0, 0, 0",
+        #393939,
+        #fff,
+        #393939,
+        #272828,
+        #e6e6e6,
+        #555,
+        #fff,
+        #777,
+        #999,
+        #e9e9e9,
+        #bbb,
+        #858282,
+        #fff,            // $base-today-in-range-color,
+        #393939,            // $base-today-in-range-bg-color,
+        #e6e6e6,
+        #858282
+    );
 
-    --flatpickr-arrow-down-svg: #{arrowDownSvg(393939)};
-    --flatpickr-month-svg-color: #393939;
-    --flatpickr-month-svg-hover-color: #f64747;
-
-    --flatpickr-arrow-border-color: #393939;
-
-    --flatpickr-calendar-bg-color: #fff;
-    --flatpickr-calendar-color: #393939;
-
-    --flatpickr-day-color: #393939;
-    --flatpickr-day-hover-bg-color: #e6e6e6;
-    --flatpickr-day-hover-border-color: #e6e6e6;
-    --flatpicker-day-disabled-color: #999;
-
-    --flatpickr-month-dropdown-color: #393939;
-    --flatpickr-current-year-color: #393939;
-    --flatpickr-input-color: #393939;
-
-    --flatpickr-calendar-box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
-    --flatpickr-calendar-border-radius: 4px;
-    --flatpickr-week-selected-bg-color: #999;
-    --flatpickr-week-selected-box-shadow: -5px 0 0 #999, 5px 0 0 #999;
-    --flatpickr-weeks-boxshadow: 1px 0 0 #e6e6e6;
-    --flatpickr-weekday-color: #555;
-
-    --flatpickr-month-bg-color: #e6e6e6;
-    --flatpickr-month-arrow-top-color: #e6e6e6;
-    --flatpickr-inner-container-bg-color: transparent;
-
-    --flatpickr-time-bg-color: transparent;
-    --flatpickr-time-border-top: 1px solid rgba(0, 0, 0, .15);
-
-
-    --flatpickr-weekdays-bg-color: transparent;
-    --flatpickr-today-bg-color: transparent;
-
-    --flatpickr-today-color: #777;
-    --flatpickr-today-border: 1px solid #777;
-
-    --flatpickr-today-bg-hover-color: rgba(0, 0, 0, .2);
-    --flatpickr-today-hover-color: #fff;
-    --flatpickr-today-hover-border: 1px solid inherit;
-
-    --flatpickr-today-bg-focus-color: rgba(0, 0, 0, .2);
-    --flatpickr-today-focus-color: #fff;
-    --flatpickr-today-focus-border: 1px solid #777;
-
-    --flatpickr-today-inrange-bg-color: #272828;
-    --flatpickr-today-inrange-color: #fff;
-    --flatpickr-today-inrange-border: 1px solid transparent;
-
-    --flatpickr-today-inrange-hover-bg-color: #272828;
-    --flatpickr-today-inrange-hover-color: #fff;
-    --flatpickr-today-inrange-hover-border: 1px solid #272828;
-
-
-    --flatpickr-today-nextmonth-bg-color: rgba(0, 0, 0, .35);
-    --flatpickr-today-nextmonth-color: #fff;
-    --flatpickr-today-nextmonth-border: 1px solid inherit;
-
-    --flatpickr-today-nextmonth-hover-bg-color: rgba(0, 0, 0, .45);
-    --flatpickr-today-nextmonth-hover-color: #fff;
-    --flatpickr-today-nextmonth-hover-border: 1px solid inherit;
+    //--flatpickr-arrow-down-svg: #{arrowDownSvg($flatpickr-theme-base-active-bg-color-hex)};
+    //--flatpickr-month-svg-color: #{$flatpickr-theme-base-color};
+    //--flatpickr-arrow-border-color: #{$flatpickr-theme-base-color};
+    //--flatpickr-month-svg-hover-color: #{$flatpickr-theme-base-active-hover-bg-color};
+    //
+    //--flatpickr-calendar-bg-color: #{$flatpickr-theme-base-bg-color};
+    //--flatpickr-calendar-color: #{$flatpickr-theme-base-color};
+    //
+    //--flatpickr-day-color: #{$flatpickr-theme-base-color};
+    //--flatpickr-day-hover-bg-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-day-hover-border-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpicker-day-disabled-color: #{$flatpickr-theme-base-disabled-color};
+    //
+    //--flatpickr-month-dropdown-color: #{$flatpickr-theme-base-color};
+    //--flatpickr-current-year-color: #{$flatpickr-theme-base-color};
+    //--flatpickr-input-color: #{$flatpickr-theme-base-color};
+    //
+    //--flatpickr-calendar-box-shadow: 0 8px 10px 1px rgba(#{$flatpickr-theme-rgb-box-shadow}, 0.14), 0 3px 14px 2px rgba(#{$flatpickr-theme-rgb-box-shadow}, 0.12), 0 5px 5px -3px rgba(#{$flatpickr-theme-rgb-box-shadow}, 0.2);
+    //--flatpickr-week-selected-bg-color: #{$flatpickr-theme-base-disabled-color};
+    //--flatpickr-week-selected-box-shadow: -5px 0 0 #{$flatpickr-theme-base-disabled-color}, 5px 0 0 #{$flatpickr-theme-base-disabled-color};
+    //--flatpickr-weeks-boxshadow: 1px 0 0 #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-weekday-color: #{$flatpickr-theme-base-lighter-color};
+    //
+    //--flatpickr-month-bg-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-month-arrow-top-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-inner-container-bg-color: #{$flatpickr-theme-base-active-color};
+    //
+    //--flatpickr-time-bg-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-time-border-top: 1px solid rgba(#{$flatpickr-theme-rgb-box-shadow}, .15);
+    //
+    //--flatpickr-weekdays-bg-color: #{$flatpickr-theme-base-active-color};
+    //
+    //--flatpickr-today-bg-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-color: #{$flatpickr-theme-base-lighten-color};
+    //--flatpickr-today-border: 1px solid #{$flatpickr-theme-base-lighten-color};
+    //
+    //--flatpickr-today-bg-hover-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-today-hover-color: #{$flatpickr-theme-base-lighten-color};
+    //--flatpickr-today-hover-border: 1px solid #{$flatpickr-theme-base-lighten-color};
+    //
+    //--flatpickr-today-bg-focus-color: #{$flatpickr-theme-base-light-hover-color};
+    //--flatpickr-today-focus-color: #{$flatpickr-theme-base-lighten-color};
+    //--flatpickr-today-focus-border: 1px solid #{$flatpickr-theme-base-lighten-color};
+    //
+    //
+    //--flatpickr-today-inrange-bg-color: #{$flatpickr-theme-base-active-bg-color};
+    //--flatpickr-today-inrange-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-inrange-border: 1px solid #{$flatpickr-theme-base-active-bg-color};
+    //
+    //--flatpickr-today-inrange-hover-bg-color: #{$flatpickr-theme-base-active-hover-bg-color};
+    //--flatpickr-today-inrange-hover-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-inrange-hover-border: 1px solid #{$flatpickr-theme-base-active-hover-bg-color};
+    //
+    //
+    //--flatpickr-today-endrange-bg-color: #{$flatpickr-theme-base-end-range-color};
+    //--flatpickr-today-endrange-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-endrange-border: 1px solid #{$flatpickr-theme-base-end-range-color};
+    //
+    //--flatpickr-today-nextmonth-bg-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-nextmonth-color: #{$flatpickr-theme-base-end-range-color};
+    //--flatpickr-today-nextmonth-border: 1px solid #{$flatpickr-theme-base-end-range-color};
+    //
+    //--flatpickr-today-nextmonth-hover-bg-color: #{$flatpickr-theme-base-active-color};
+    //--flatpickr-today-nextmonth-hover-color: #{$flatpickr-theme-base-end-range-color};
+    //--flatpickr-today-nextmonth-hover-border: 1px solid #{$flatpickr-theme-base-end-range-color};
 }
 
 .aa-flatpickr-calendar-wrapper {
@@ -105,10 +144,12 @@
         padding-left: 5px;
         padding-right: 5px;
     }
+
     .flatpickr-calendar.arrowTop:after,
     .flatpickr-calendar.arrowTop:before {
         border-bottom-color: var(--flatpickr-month-arrow-top-color);
     }
+
     .flatpickr-months {
         background-color: var(--flatpickr-month-bg-color);
         display: flex;
@@ -286,39 +327,21 @@
         }
 
         &.selected,
-        &.selected.inRange {
+        &.selected.inRange,
+        &.startRange,
+        &.startRange.inRange,
+        &.endRange,
+        &.endRange.inRange {
             background: var(--flatpickr-today-inrange-bg-color);
             border: var(--flatpickr-today-inrange-border);
             color: var(--flatpickr-today-inrange-color);
 
+            &:focus,
             &:hover {
                 background: var(--flatpickr-today-inrange-hover-bg-color);
                 border: var(--flatpickr-today-inrange-hover-border);
                 color: var(--flatpickr-today-inrange-hover-color);
             }
-        }
-
-        &.endRange,
-        &.endRange.inRange,
-        &.endRange.nextMonthDay,
-        &.endRange.prevMonthDay,
-        &.endRange:focus,
-        &.endRange:hover,
-        &.selected,
-        &.selected.inRange,
-        &.selected.nextMonthDay,
-        &.selected.prevMonthDay,
-        &.selected:focus,
-        &.selected:hover,
-        &.startRange,
-        &.startRange.inRange,
-        &.startRange.nextMonthDay,
-        &.startRange.prevMonthDay,
-        &.startRange:focus,
-        &.startRange:hover {
-            background: var(--flatpickr-today-inrange-bg-color);
-            border: var(--flatpickr-today-inrange-border);
-            color: var(--flatpickr-today-inrange-color);
         }
 
         &.week {
@@ -331,12 +354,40 @@
         &.flatpickr-disabled,
         &.flatpickr-disabled:hover,
         &.nextMonthDay,
+        &.prevMonthDay,
         &.notAllowed,
+        &.startRange.nextMonthDay,
+        &.startRange.prevMonthDay
         &.notAllowed.nextMonthDay,
         &.notAllowed.prevMonthDay,
-        &.prevMonthDay {
+        &.endRange.nextMonthDay,
+        &.endRange.prevMonthDay {
             color: var(--flatpicker-day-disabled-color);
         }
+
+        &.endRange.nextMonthDay,
+        &.endRange.prevMonthDay,
+        &.nextMonthDay,
+        &.prevMonthDay {
+            &:hover,
+            &:focus {
+                background: var(--flatpickr-today-endrange-bg-color);
+                border: var(--flatpickr-today-endrange-border);
+                color: var(--flatpickr-today-endrange-color);
+            }
+        }
+
+        &.selected.nextMonthDay,
+        &.selected.prevMonthDay {
+            &,
+            &:hover,
+            &:focus {
+                background: var(--flatpickr-today-endrange-bg-color);
+                border: var(--flatpickr-today-endrange-border);
+                color: var(--flatpickr-today-endrange-color);
+            }
+        }
+
     }
 
     .flatpickr-months .flatpickr-next-month {
@@ -430,12 +481,15 @@
     .flatpickr-current-month .numInputWrapper span[class^=arrow] {
         padding: 0 4px 0 4px;
     }
+
     .numInputWrapper span {
-        border:0;
+        border: 0;
     }
+
     .numInputWrapper span:after {
         border-color: var(--flatpickr-arrow-border-color);
     }
+
     .flatpickr-time .numInputWrapper span.arrowUp:after,
     .flatpickr-time .numInputWrapper span.arrowDown:after,
     .flatpickr-current-month .numInputWrapper span.arrowUp:after,

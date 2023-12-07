@@ -4,76 +4,42 @@ $dark-font-color: #f9f9f9;
 $dark-font-hover-color: #fff;
 $dark-darker-color: #1e1e1e;
 $dark-bg-color: #2e2e2e;
+$dark-end-range-bg-color: #1f1f1f;
 $dark-bg-selected-color: rgba(0,0,0,.8);
 $dark-bg-hover-color: rgba(0,0,0,.35);
 $dark-bg-hover-darker-color: rgba(0,0,0,.45);
 
 .theme-dark {
-    --flatpickr-dark-font-color: #{$dark-bg-color};
-    --flatpickr-dark-color: #{$dark-font-color};
-
-    // sublime monokai bg color
-    --flatpickr-calendar-bg-color: #{$dark-bg-color};
-
-    --flatpickr-arrow-down-svg: #{arrowDownSvg(f9f9f9)};
-    --flatpickr-month-svg-color: #{$dark-font-color};
-    --flatpickr-month-svg-hover-color: #{$dark-font-hover-color};
-
-    --flatpickr-calendar-color: #{$dark-font-color};
-
-    --flatpickr-day-color: #{$dark-font-color};
-    --flatpickr-day-hover-bg-color: #{$dark-bg-hover-color};
-    --flatpickr-day-hover-border-color: #{$dark-bg-hover-color};
-
-    --flatpickr-month-dropdown-color: #{$dark-font-color};
-    --flatpickr-arrow-border-color: #{$dark-font-color};
-    --flatpickr-current-year-color: #{$dark-font-color};
-    --flatpickr-input-color: #{$dark-font-color};
-
-    --flatpickr-calendar-box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
-    --flatpickr-calendar-border-radius: 4px;
-
-    --flatpickr-week-selected-bg-color: #{$dark-darker-color};
-    --flatpickr-week-selected-box-shadow: -5px 0 0 #{$dark-darker-color}, 5px 0 0 #{$dark-darker-color};
-    --flatpickr-weeks-boxshadow: 1px 0 0 rgba(255, 255, 255, .15);
-    --flatpickr-weekday-color: #aaa;
-
-    --flatpickr-month-bg-color: #1c1c1c;
-    --flatpickr-month-arrow-top-color: #1c1c1c;
-    --flatpickr-inner-container-bg-color: transparent;
-
-    --flatpickr-time-bg-color: transparent;
-    --flatpickr-time-border-top: 1px solid rgba(255, 255, 255, .15);
 
 
-    --flatpickr-weekdays-bg-color: transparent;
-    --flatpickr-today-bg-color: transparent;
-
-    --flatpickr-today-color: #{$dark-font-hover-color};
-    --flatpickr-today-border: 1px solid #{$dark-font-hover-color};
-
-    --flatpickr-today-bg-hover-color: transparent;
-    --flatpickr-today-hover-color: #{$dark-font-hover-color};
-    --flatpickr-today-hover-border: 1px solid #{$dark-font-hover-color};
-
-    --flatpickr-today-bg-focus-color: rgba(0, 0, 0, .2);
-    --flatpickr-today-focus-color: #{$dark-bg-color};
-    --flatpickr-today-focus-border: 1px solid #{$dark-font-hover-color};
-
-    --flatpickr-today-inrange-bg-color: #{$dark-bg-selected-color};
-    --flatpickr-today-inrange-color: #{$dark-font-hover-color};
-    --flatpickr-today-inrange-border: 1px solid transparent;
-
-    --flatpickr-today-inrange-hover-bg-color: #{$dark-bg-selected-color};
-    --flatpickr-today-inrange-hover-color: #{$dark-font-hover-color};
-    --flatpickr-today-inrange-hover-border: 1px solid #{$dark-bg-selected-color};
 
 
-    --flatpickr-today-nextmonth-bg-color: transprent;
-    --flatpickr-today-nextmonth-color: #999;
-    --flatpickr-today-nextmonth-border: 1px solid #999;
 
-    --flatpickr-today-nextmonth-hover-bg-color: #{$dark-bg-hover-darker-color};
-    --flatpickr-today-nextmonth-hover-color: #{$dark-font-hover-color};
-    --flatpickr-today-nextmonth-hover-border: 1px solid inherit;
+
+
+
+
+
+
+    @include themeRootVariable(
+        "fff", // $base-color-hex,
+        "0, 0, 0", //    $rgb-box-shadow,
+        #fff,     //    $base-color,
+        #2e2e2e,     //    $base-bg-color,
+        #1e1e1e,     //    $base-active-bg-color,
+        #fff,     //    $base-active-hover-bg-color,
+        #262626,     //    $base-light-hover-color,
+        #bbb,    //    $base-lighter-color,
+        #2e2e2e,     //    $base-active-color,
+        #777,    //    $base-lighten-color,
+        #999,     //    $base-disabled-color,
+        #262626, //    $base-end-range-color
+        #999, //    $base-end-range-border-color
+        #fff, //   $base-today-color
+        #fff, //    $base-today-in-range-color
+        #1e1e1e, //    $base-today-in-range-bg-color
+        #2e2e2e, //    $base-next-month-bg-color
+        #fff //    $base-next-color
+    );
+
 }

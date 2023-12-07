@@ -20,3 +20,91 @@
 @function arrowDownSvg($hexColor) {
     @return url('data:image/svg+xml;charset=utf8,%3csvg fill="%23#{$hexColor}" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"%3e%3cpath d="M7 10l5 5 5-5z"/%3e%3cpath d="M0 0h24v24H0z" fill="none"/%3e%3c/svg%3e');
 }
+
+@mixin themeRootVariable(
+    $base-color-hex,
+    $rgb-box-shadow,
+    $base-color,
+    $base-bg-color,
+    $base-active-bg-color,
+    $base-active-hover-bg-color,
+    $base-light-hover-color,
+    $base-lighter-color,
+    $base-active-color,
+    $base-lighten-color,
+    $base-disabled-color,
+    $base-end-range-color,
+    $base-end-range-border-color,
+    $base-today-color,
+    $base-today-in-range-color,
+    $base-today-in-range-bg-color,
+    $base-next-month-bg-color,
+    $base-next-color
+) {
+    --flatpickr-arrow-down-svg: #{arrowDownSvg($base-color-hex)};
+    --flatpickr-month-svg-color: #{$base-color};
+    --flatpickr-arrow-border-color: #{$base-color};
+    --flatpickr-month-svg-hover-color: #{$base-active-hover-bg-color};
+
+    --flatpickr-month-dropdown-color: #{$base-color};
+    --flatpickr-current-year-color: #{$base-color};
+    --flatpickr-input-color: #{$base-color};
+
+    --flatpickr-calendar-bg-color: #{$base-bg-color};
+    --flatpickr-calendar-color: #{$base-color};
+
+    --flatpickr-day-color: #{$base-color};
+    --flatpickr-day-hover-bg-color: #{$base-light-hover-color};
+    --flatpickr-day-hover-border-color: #{$base-light-hover-color};
+    --flatpicker-day-disabled-color: #{$base-disabled-color};
+
+
+    --flatpickr-calendar-box-shadow: 0 8px 10px 1px rgba(#{$rgb-box-shadow}, 0.14), 0 3px 14px 2px rgba(#{$rgb-box-shadow}, 0.12), 0 5px 5px -3px rgba(#{$rgb-box-shadow}, 0.2);
+    --flatpickr-week-selected-bg-color: #{$base-disabled-color};
+    --flatpickr-week-selected-box-shadow: -5px 0 0 #{$base-disabled-color}, 5px 0 0 #{$base-disabled-color};
+    --flatpickr-weeks-boxshadow: 1px 0 0 #{$base-light-hover-color};
+    --flatpickr-weekday-color: #{$base-lighter-color};
+
+    --flatpickr-month-bg-color: #{$base-light-hover-color};
+    --flatpickr-month-arrow-top-color: #{$base-light-hover-color};
+    --flatpickr-inner-container-bg-color: #{$base-active-color};
+
+    --flatpickr-time-bg-color: #{$base-active-color};
+    --flatpickr-time-border-top: 1px solid rgba(#{$rgb-box-shadow}, .15);
+
+    --flatpickr-weekdays-bg-color: #{$base-active-color};
+
+    --flatpickr-today-bg-color: #{$base-active-color};
+    --flatpickr-today-color: #{$base-today-color};
+    --flatpickr-today-border: 1px solid #{$base-today-color};
+
+    --flatpickr-today-bg-hover-color: #{$base-light-hover-color};
+    --flatpickr-today-hover-color: #{$base-today-color};
+    --flatpickr-today-hover-border: 1px solid #{$base-today-color};
+
+    --flatpickr-today-bg-focus-color: #{$base-light-hover-color};
+    --flatpickr-today-focus-color: #{$base-today-color};
+    --flatpickr-today-focus-border: 1px solid #{$base-today-color};
+
+
+    --flatpickr-today-inrange-bg-color: #{$base-today-in-range-bg-color};
+    --flatpickr-today-inrange-color: #{$base-today-in-range-color};
+    --flatpickr-today-inrange-border: 1px solid #{$base-today-in-range-bg-color};
+
+    --flatpickr-today-inrange-hover-bg-color: #{$base-today-in-range-bg-color};
+    --flatpickr-today-inrange-hover-color: #{$base-today-in-range-color};
+    --flatpickr-today-inrange-hover-border: 1px solid #{$base-today-in-range-bg-color};
+
+
+    --flatpickr-today-endrange-bg-color: #{$base-end-range-color};
+    --flatpickr-today-endrange-color: #{$base-today-color};
+    --flatpickr-today-endrange-border: 1px solid #{$base-end-range-color};
+
+    --flatpickr-today-nextmonth-bg-color: #{$base-active-color};
+    --flatpickr-today-nextmonth-color: #{$base-next-color};
+    --flatpickr-today-nextmonth-border: 1px solid #{$base-end-range-border-color};
+
+    --flatpickr-today-nextmonth-hover-bg-color: #{$base-active-color};
+    --flatpickr-today-nextmonth-hover-color: #{$base-next-color};
+    --flatpickr-today-nextmonth-hover-border: 1px solid #{$base-end-range-border-color};
+}

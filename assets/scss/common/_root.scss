@@ -13,6 +13,7 @@
     --aa-maximize-bg-color: #{$m-malachite};
     --aa-close-bg-color: #{$m-sunset-orange};
     --aa-base-block-width: calc(100% - .2rem);
+    --aa-base-margin-top-bottom: .5rem;
     --aa-base-block-margin: .5rem auto;
     &,
     &::before,
@@ -27,4 +28,12 @@
 
 .aa-clearfix {
     @include clearfix;
+}
+.aa-field-description {
+    display: block;
+    @include clearfix;
+}
+.aa-multi-input-inner-wrap {
+    margin-top: var(--aa-base-margin-top-bottom);
+    margin-bottom: var(--aa-base-margin-top-bottom);
 }

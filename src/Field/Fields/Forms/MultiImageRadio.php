@@ -15,6 +15,7 @@ class MultiImageRadio extends AbstractField implements MultipleFieldInterface, F
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
+        build as protected buildMultiField;
     }
 
     /**
@@ -99,5 +100,13 @@ class MultiImageRadio extends AbstractField implements MultipleFieldInterface, F
         }
 
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    {
+        return $this->buildMultiField($inline, $wrapper, null);
     }
 }

@@ -28,16 +28,6 @@
         }
         el.dispatchEvent(new CustomEvent(eventName, {detail: [el, ...detail]}));
     };
-
-    const ready = (fn) => {
-        if (w.document.readyState === "complete" || (w.document.readyState !== "loading")) {
-            // if document is already ready, then run
-            fn();
-        } else {
-            // if document hasn't finished loading, add event listener
-            w.document.addEventListener("DOMContentLoaded", fn);
-        }
-    };
     const isInputForm = (el) => el instanceof HTMLElement && ['TEXTAREA', 'INPUT'].indexOf(el.tagName) !== -1;
     const select = (selector, context) => (context || document)?.querySelector(selector);
     const selects = (selector, context) => (context || document)?.querySelectorAll(selector)||[];
@@ -76,9 +66,9 @@
 
     let incrementEditor = 0;
 
-    const init = () => {
+    const init = (jq) => {
         //const wp = w.wp||null;
-        $ = w.jQuery || null;
+        $ = jq || w.jQuery || null;
 
         dispatchReadyEvent(window, 'arrayaccess-common-ready');
         if (w['flatpickr'] && typeof w['flatpickr'] === 'function') {
@@ -95,6 +85,108 @@
                 } catch (err) {
                     // skip
                 }
+                const locale = e.getAttribute('data-flatpickr-locale');
+                // make 24 hours
+                // _options['time_24hr'] = true;
+                const type = e.getAttribute('type') || '';
+                if (!_options.altFormat || typeof _options.altFormat !== 'string') {
+                    _options.altFormat = null;
+                }
+                _options.altInput = true;
+                if (locale
+                    && typeof locale === 'string'
+                    && typeof w['flatpickr'].l10ns === 'object'
+                    && w['flatpickr'].l10ns[locale]
+                ) {
+                    _options.locale = locale;
+                }
+
+                // standard format
+                switch (type.toString().toLowerCase()) {
+                    case 'date':
+                        _options.altFormat = _options.altFormat || "F j, Y";
+                        _options.format = 'Y-m-d';
+                        break;
+                    case 'time':
+                        _options.format = 'H:i:s';
+                        _options.noCalendar = true;
+                        _options.altFormat = _options.altFormat || 'H:i:s';
+                        break;
+                    case 'month':
+                        _options.format = 'Y-m';
+                        _options.altFormat = _options.altFormat || 'j Y';
+                        if (typeof w['monthSelectPlugin'] === 'function') {
+                            _options.plugins = [new w['monthSelectPlugin']({})];
+                        }
+                        break;
+                    case 'week':
+                        _options.format = 'Y-WW';
+                        _options.weekNumbers = true;
+                        // eslint-disable-next-line
+                        _options.altFormat = _options.altFormat || '\\W\\e\\e\\k W, Y';
+                        if (typeof w['weekSelect'] === 'function') {
+                            _options.plugins = [new w['weekSelect']({})];
+                        }
+                        break;
+                    case 'datetime-local':
+                        _options.format = 'Y-m-dTH:i:s';
+                        _options.altFormat = _options.altFormat || 'F j, Y H:i:s';
+                        break;
+                    default:
+                        _options.format = 'Y-m-d H:i:s';
+                        _options.altFormat = _options.altFormat || 'F j, Y H:i:s';
+                        break;
+                }
+                const id = e.id;
+                const label = id ? e.parentNode.querySelector('label[for="' + id + '"]') : null;
+                if (label) {
+                    // ignore the label inside of parent node
+                    _options.ignoredFocusElements = [label];
+                }
+                const dataTheme = e.getAttribute('data-flatpickr-theme');
+                _options.theme = dataTheme && typeof dataTheme === 'string'
+                    ? dataTheme
+                    : (_options.theme || 'default');
+                // wrap only work with another ridiculous option
+                _options.wrap = false;
+                _options.enableSeconds = !!_options.format.match(/H:i:s/g);
+                _options.enableTime = _options.enableSeconds;
+                _options.onReady = (selectedDates, dateStr, instance) => {
+                    if (instance._input instanceof HTMLInputElement) {
+                        e.removeAttribute('id');
+                        instance.id = id;
+                        instance._input.classList.add('aa-flatpickr-input');
+                        instance._input.style.minWidth = instance._input.value.length + 'ch';
+                        instance._input.style.width = (instance._input.value.length + 1 ) + 'ch';
+                        instance._input.style.maxWidth = '100%';
+                    }
+                    const divWrapper = createDiv('aa-flatpickr-calendar-wrapper', null, instance.calendarContainer);
+                    document.body.appendChild(divWrapper);
+                    if (instance.calendarContainer instanceof HTMLElement) {
+                        const theme = _options.theme;
+                        if (theme
+                            && typeof theme === 'string'
+                            && theme.match(/[a-z]+[a-z-][a-z]+$/gi)
+                        ) {
+                            divWrapper.classList.add('theme-' + theme);
+                        }
+
+                        label
+                            ?.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                if (!instance.isOpen) {
+                                    instance.open();
+                                }
+                            });
+                    }
+                };
+
+                _options.onChange = (selectedDates, dateStr, instance) => {
+                    if (instance._input instanceof HTMLInputElement) {
+                        instance._input.style.minWidth = instance._input.value.length + 'ch';
+                    }
+                };
+
                 dispatchReadyEvent(e, 'flatpickr-ready', w['flatpickr'](e, _options));
             });
         }
@@ -514,15 +606,48 @@
         }
         return true;
     };
-
-    ready(() => {
-        const scriptIdSelector = 'script[id^=arrayaccess][async]';
-        const asyncScripts = selects(scriptIdSelector);
-        !asyncScripts.length ? init() : Promise.all(asyncScripts.map((e) => {
-            return new Promise((resolve, reject) => {
-                e.onload = resolve;
-                e.onerror = reject;
+    let scriptReady = false;
+    if (typeof w.arrayAccessReady !== "function") {
+        w.arrayAccessReady = function (fn) {
+            if (scriptReady) {
+                fn($);
+                return;
+            }
+            const ready = (fn) => {
+                if (["complete", "loaded", "interactive"].indexOf(w.document.readyState) !== -1) {
+                    // if document is already ready, then run
+                    fn($);
+                } else {
+                    // if document hasn't finished loading, add event listener
+                    w.document.addEventListener("DOMContentLoaded", () => fn($), false);
+                }
+            };
+            ready(() => {
+                const callbackReady = () => {
+                    scriptReady = true;
+                    fn($);
+                };
+                const scriptIdSelector = 'script[id^=arrayaccess][async]';
+                const asyncScripts = selects(scriptIdSelector);
+                if (!asyncScripts.length) {
+                    scriptReady = true;
+                    fn($);
+                    return;
+                }
+                Promise.all(asyncScripts.map((e) => {
+                    return new Promise((resolve, reject) => {
+                        e.onload = resolve;
+                        e.onerror = reject;
+                    });
+                })).then(callbackReady).catch(callbackReady);
             });
-        })).then(init).catch(init);
-    });
+        };
+        const arrayAccessReady = w.arrayAccessReady;
+        arrayAccessReady.finds = selects;
+        arrayAccessReady.find  = select;
+        arrayAccessReady.dispatch = dispatchReadyEvent;
+
+        Object.freeze(w.arrayAccessReady);
+    }
+    w.arrayAccessReady(init);
 })(window);

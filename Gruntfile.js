@@ -213,8 +213,9 @@
                         "dist/vendor/flatpickr/flatpickr.bundle.css": [
                             "node_modules/flatpickr/dist/flatpickr.css",
                             "node_modules/flatpickr/dist/plugins/**/*.css",
-                            "node_modules/flatpickr/dist/themes/*.css",
-                            "!node_modules/flatpickr/dist/themes/*.min.css",
+                            // we do not need theme css
+                            // "node_modules/flatpickr/dist/themes/*.css",
+                            // "!node_modules/flatpickr/dist/themes/*.min.css",
                             "!node_modules/flatpickr/dist/plugins/**/*.min.css"
                         ]
                     }

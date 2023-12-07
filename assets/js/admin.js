@@ -10,13 +10,5 @@
         //     return;
         // }
     };
-
-    // init on document ready
-    if (w.document.readyState === "complete" || (w.document.readyState !== "loading")) {
-        // if document is already ready, then init
-        init();
-    } else {
-        // if document hasn't finished loading, add event listener
-        w.document.addEventListener("DOMContentLoaded", init);
-    }
+    (w.arrayAccessReady || function(e) {w.onload = () => e(w.jQuery)})(init);
 })(window);

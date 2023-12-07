@@ -327,6 +327,7 @@ class Form extends AbstractField implements
             $html .= $field->build();
             $html .= '</div>';
         }
+
         // add nonce if not exist
         if ($enableNonce && !$hasNonce) {
             $html = (new Nonce())->build() . $html;

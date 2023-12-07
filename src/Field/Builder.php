@@ -17,6 +17,7 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ImageCheckbox;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ImageFile;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\ImageRadio;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Input;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Month;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiCheckbox;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiImageCheckbox;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\MultiImageRadio;
@@ -32,6 +33,8 @@ use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Select;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Slider;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\SubmitButton;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Textarea;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Time;
+use ArrayAccess\WP\Libraries\Core\Field\Fields\Forms\Week;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Sections\CodeBlock;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Sections\DivSection;
 use ArrayAccess\WP\Libraries\Core\Field\Fields\Sections\DivSeparator;
@@ -50,7 +53,6 @@ use function is_string;
 use function method_exists;
 use function strtolower;
 use function trim;
-use function ucwords;
 
 /**
  * @todo add more fields & complete the builder
@@ -72,8 +74,8 @@ class Builder
             return null;
         }
         $name = trim($name);
-        $title = $definition['title']??$name;
-        $title = !is_string($title) || trim($title) === '' ? ucwords($name) : $title;
+        $title = $definition['title']??null;
+        $title = !is_string($title) || trim($title) === '' ? null : $title;
         $description = $definition['description']??'';
         if (trim($name) === '' && !in_array(
             $type,
@@ -129,9 +131,9 @@ class Builder
             case 'editor-input':
                 $field = new CodeEditor($name);
                 $content = $value??(
-                        $definition['html']??(
-                        $definition['content']??null
-                    )
+                    $definition['html']??(
+                    $definition['content']??null
+                )
                 );
                 unset($definition['html'], $definition['content']);
                 $field->setValue($content);
@@ -164,17 +166,24 @@ class Builder
                 $field = $type === 'date' || $type === 'date-input'
                     ? new Date($name)
                     : new DateTime($name);
-                $format = $definition['format']??null;
-                unset($definition['format']);
-                if (is_string($format)) {
-                    $field->setDateFormat($format);
-                }
                 break;
             case 'datetime-local':
             case 'datetime-local-input':
             case 'datetimelocal':
             case 'datetimelocal-input':
                 $field = new DateTimeLocal($name);
+                break;
+            case 'time':
+            case 'time-input':
+                $field = new Time($name);
+                break;
+            case 'week':
+            case 'week-input':
+                $field = new Week($name);
+                break;
+            case 'month':
+            case 'month-input':
+                $field = new Month($name);
                 break;
             case 'email':
             case 'email-input':
@@ -293,9 +302,9 @@ class Builder
                     $checkboxDefinition['name'] ??= $optionName;
                     $value = $checkboxDefinition['value']??null;
                     $imageUrl = $checkboxDefinition['image_url']??(
-                            $checkboxDefinition['image']??(
-                            $checkboxDefinition['url']??null
-                        )
+                        $checkboxDefinition['image']??(
+                        $checkboxDefinition['url']??null
+                    )
                     );
                     $checkboxDefinition['checked'] ??= $checked[$optionName]??false;
                     $imageUrl = is_string($imageUrl) ? $imageUrl : '';
@@ -368,9 +377,9 @@ class Builder
                 );
                 $isRadio = is_array($inputs);
                 $inputs = !$isRadio  ? (
-                        $definition['checkbox']??(
-                        $definition['checkboxes']??null
-                    )
+                    $definition['checkbox']??(
+                    $definition['checkboxes']??null
+                )
                 ) : $inputs;
                 $inputs ??= $definition['options']??null;
                 if (empty($inputs)) {
@@ -416,10 +425,10 @@ class Builder
                         $field->setChecked(
                             $input,
                             ($value !== null && $value === $input->getAttribute('value'))
-                                || HtmlAttributes::isBooleanAttributeEnabled(
-                                    'checked',
-                                    $inputDefinition['checked']??false
-                                )
+                            || HtmlAttributes::isBooleanAttributeEnabled(
+                                'checked',
+                                $inputDefinition['checked']??false
+                            )
                         );
                     }
                 }
@@ -647,12 +656,6 @@ class Builder
                 $field->setAttribute('value', $value);
             }
         }
-        if (isset($definition['date_format'])
-            && is_string($definition['date_format'])
-        ) {
-            $field->setDateFormat($definition['date_format']);
-        }
-        unset($definition['date_format']);
         $field
             ->setLabel($title)
             ->setDescription($description);
@@ -662,12 +665,14 @@ class Builder
         if (!$field instanceof UnsupportedNameAttributeInterface) {
             $field->setName($name);
         }
+
         foreach ($definition as $key => $attr) {
             if (!is_string($key)) {
                 continue;
             }
             $field->setAttribute($key, $attr);
         }
+
         return $field;
     }
 }

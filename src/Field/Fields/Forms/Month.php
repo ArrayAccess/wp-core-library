@@ -5,23 +5,20 @@ namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
 use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
 
-class DateTimeLocal extends Date
+class Month extends Date
 {
     /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
-        'type' => 'datetime-local',
+        'type' => 'month',
         'data-flatpickr' => 'true',
     ];
 
-    /**
-     * @var string|null The static type.
-     */
-    protected ?string $staticType = 'datetime-local';
+    protected ?string $staticType = 'month';
 
     /**
      * @var string The date time format.
      */
-    protected string $dateFormat = HtmlAttributes::DATETIME_LOCAL_FORMAT;
+    protected string $dateFormat = HtmlAttributes::MONTH_FORMAT;
 }

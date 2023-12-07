@@ -72,16 +72,26 @@ trait MultipleFieldTrait
     }
 
     /**
+     * @return bool use current label
+     */
+    protected function useCurrentLabel() : bool
+    {
+        return false;
+    }
+
+    /**
      * Create a multi input field with div|wrapper
      *
      * @param bool $inline by default is false (not inline)
      * @param string $wrapper by default is div tag
+     * @param mixed $subWrapper
      * @return string
      * @noinspection PhpNonStrictObjectEqualityInspection
      */
-    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    public function build(?bool $inline = null, mixed $wrapper = 'div', mixed $subWrapper = 'div'): string
     {
         $wrapper = !is_string($wrapper) ? 'div' : $wrapper;
+        $subWrapper = !is_string($subWrapper) ? null : $subWrapper;
         $html = '';
         foreach ($this->getFields() as $field) {
             // phpcs:ignore SlevomatCodingStandard.Operators.DisallowEqualOperators
@@ -89,7 +99,7 @@ trait MultipleFieldTrait
                 continue;
             }
             if ($field instanceof MultipleFieldInterface) {
-                $html .= $field->build($inline, $wrapper);
+                $html .= $field->build($inline, $wrapper, $subWrapper);
                 continue;
             }
             $attr = $field->getAttributes();
@@ -107,9 +117,12 @@ trait MultipleFieldTrait
             } else {
                 unset($attr['name'], $attr['type'], $attr['value']);
             }
-            $label = $field->getLabel();
-            // use current tag name
-            $field->setLabel(null);
+            $label = null;
+            if ($this->useCurrentLabel()) {
+                $label = $field->getLabel();
+                // use current tag name
+                $field->setLabel(null);
+            }
             $htmlTag = $field->build();
             $type = $field->getAttribute('type');
             if ($label
@@ -125,7 +138,20 @@ trait MultipleFieldTrait
                     $htmlTag
                 );
             }
-
+            if ($subWrapper) {
+                $htmlTag = HtmlAttributes::createHtmlTag(
+                    $subWrapper,
+                    [
+                        'class' => [
+                            'aa-multi-input-inner-wrap',
+                            'aa-multi-input-inner-' . HtmlAttributes::filterAttributeName(
+                                $field->getTagName()
+                            ),
+                        ],
+                        'html' => $htmlTag
+                    ]
+                );
+            }
             $html .= $htmlTag;
         }
 
@@ -137,9 +163,11 @@ trait MultipleFieldTrait
         $attrClass = is_string($attributes['class'])
             ? explode(' ', $attributes['class'])
             : (is_iterable($attributes['class']) ? $attributes['class'] : []);
+        $theType = $this->getAttribute('type');
+        $theType = $theType ? "-$theType" : '';
         $attributes['class'] = [
             'aa-multi-input',
-            'aa-multi-input-' . $this->getAttribute('type'),
+            'aa-multi-input' . $theType,
         ];
         if ($inline) {
             $attributes['class'][] = 'aa-multi-input-inline';

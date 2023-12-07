@@ -15,6 +15,7 @@ class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
+        build as protected buildMultiField;
     }
 
     /**
@@ -110,5 +111,13 @@ class MultiImageCheckbox extends AbstractField implements MultipleFieldInterface
         }
 
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    {
+        return $this->buildMultiField($inline, $wrapper, null);
     }
 }

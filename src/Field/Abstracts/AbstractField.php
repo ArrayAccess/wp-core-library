@@ -119,7 +119,7 @@ abstract class AbstractField implements FieldInterface
     /**
      * @var string The date format.
      */
-    protected string $dateFormat = 'Y-m-d H:i:s';
+    protected string $dateFormat = HtmlAttributes::DATETIME_FORMAT;
 
     /**
      * @inheritdoc
@@ -165,15 +165,6 @@ abstract class AbstractField implements FieldInterface
             );
         }
         $this->id = $id;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function setDateFormat(string $format): static
-    {
-        $this->dateFormat = $format;
         return $this;
     }
 
@@ -335,6 +326,10 @@ abstract class AbstractField implements FieldInterface
                 return $this;
             }
         }
+        if ($attributeName === 'label' && ($value === null || is_scalar($value))) {
+            $this->setLabel($value === null ? null : (string) $value);
+            return $this;
+        }
         $this->attributes[$attributeName] = $value;
         return $this;
     }
@@ -469,6 +464,7 @@ abstract class AbstractField implements FieldInterface
         if (($attributes['value']??null) instanceof DateTimeInterface) {
             $attributes['value'] = $attributes['value']->format($this->getDateFormat());
         }
+
         $tag = HtmlAttributes::createHtmlTag($this->getTagName(), $attributes);
         $label = $this->getLabel();
         if (is_callable([$this, 'getOverrideLabel'])) {

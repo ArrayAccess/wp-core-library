@@ -3,22 +3,22 @@ declare(strict_types=1);
 
 namespace ArrayAccess\WP\Libraries\Core\Field\Fields\Forms;
 
+use ArrayAccess\WP\Libraries\Core\Util\HtmlAttributes;
+
 class DateTime extends Date
 {
     /**
      * @var array|string[] The default attributes.
      */
     protected array $attributes = [
-        'type' => 'date',
+        'type' => 'datetime',
         'data-flatpickr' => 'true',
-        'data-flatpickr-options' => [
-            'dateFormat' => 'Y-m-d H:i:s',
-            'allowInput' => true,
-        ],
     ];
+
+    protected ?string $staticType = 'datetime';
 
     /**
      * @var string The date time format.
      */
-    protected string $dateFormat = 'Y-m-d H:i:s';
+    protected string $dateFormat = HtmlAttributes::DATETIME_FORMAT;
 }

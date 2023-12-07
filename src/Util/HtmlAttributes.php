@@ -8,6 +8,7 @@ use DateTimeInterface;
 use JsonSerializable;
 use Stringable;
 use function array_filter;
+use function date;
 use function explode;
 use function force_balance_tags;
 use function htmlspecialchars;
@@ -41,6 +42,13 @@ use const PHP_INT_MAX;
  */
 class HtmlAttributes
 {
+    public const DATETIME_FORMAT = 'Y-m-d H:i:s';
+    public const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i:s';
+    public const DATE_FORMAT = 'Y-m-d';
+    public const WEEK_FORMAT = 'Y-\WW';
+    public const MONTH_FORMAT = 'Y-m';
+    public const TIME_FORMAT = 'H:i:s';
+    public const TIME_LOCAL_FORMAT = 'H:i';
     /**
      * HTML attributes
      */
@@ -437,7 +445,7 @@ class HtmlAttributes
                 $value = $value ? '1' : '0';
             }
         } elseif ($value instanceof DateTimeInterface) {
-            $value = $value->format('Y-m-d H:i:s');
+            $value = $value->format('c'); // Y-m-d\TH:i:sP
         } elseif ($value instanceof Stringable || is_scalar($value)) {
             // if it was a float & more than PHP_INT_MAX commonly contain E,
             // convert with bc function
@@ -493,6 +501,36 @@ class HtmlAttributes
     }
 
     /**
+     * @param string $type
+     * @param mixed $value
+     * @return ?string returning null if value is invalid
+     */
+    private static function convertDateValue(string $type, mixed $value): ?string
+    {
+        $format = match ($type) {
+            'date' => self::DATE_FORMAT,
+            'datetime' => self::DATETIME_FORMAT,
+            'datetime-local' => self::DATETIME_LOCAL_FORMAT,
+            default => null
+        };
+        if (!$format) {
+            return null;
+        }
+        if (is_int($value) || is_numeric($value)) {
+            return date($format, (int) $value);
+        } elseif (is_string($value)) {
+            $value = Consolidator::callNoError('strtotime', $value);
+            if ($value === false) {
+                return null;
+            }
+            return date($format, $value);
+        } elseif ($value instanceof DateTimeInterface) {
+            return $value->format($format);
+        }
+        return null;
+    }
+
+    /**
      * Returning build attribute lists
      *
      * @param array $attributes
@@ -502,38 +540,25 @@ class HtmlAttributes
     public static function buildAttributesArray(array $attributes, ?string $tagName = null): array
     {
         $tagName = $tagName ? self::filterAttributeName($tagName) : null;
-        $isDateTimeLocal = $tagName === 'input'
-            && isset($attributes['type'])
-            && $attributes['type'] === 'datetime-local';
+        $type = strtolower($attributes['type']??'');
+        $isDate = $tagName === 'input'
+            && $type
+            && in_array($attributes['type'], ['date', 'datetime', 'datetime-local']);
         $attr = [];
         foreach ($attributes as $key => $value) {
             // min max is exceptional for datetimelocal
-            if ($isDateTimeLocal && is_string($key)
-                && (strtolower($key) === 'min' || strtolower($key) === 'max')
+            if ($isDate
+                && in_array($key, ['min', 'max', 'value'])
+                && ($value = self::convertDateValue($type, $value)) === null
             ) {
-                if (is_int($value) || is_numeric($value) && !str_contains($value, '.')) {
-                    $value = date('Y-m-d\TH:i:s', (int) $value);
-                } elseif (is_string($value)) {
-                    $value = Consolidator::callNoError('strtotime', $value);
-                    if ($value === false) {
-                        continue;
-                    }
-                    $value = date('Y-m-d\TH:i:s', $value);
-                } elseif ($value instanceof DateTimeInterface) {
-                    $value = $value->format('Y-m-d\TH:i:s');
-                } else {
-                    continue;
-                }
-                $attr = [
-                    'key' => strtolower($key),
-                    'value' => $value
-                ];
+                continue;
             } else {
                 $attrs = self::convertAttributeValue($key, $value);
                 if (!$attrs) {
                     continue;
                 }
             }
+
             $key = $attrs['key'];
             $value = $attrs['value'];
             if ($value === false) {

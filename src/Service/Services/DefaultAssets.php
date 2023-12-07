@@ -199,6 +199,24 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
     }
 
     /**
+     * @param string $handle
+     * @param string $type
+     * @return bool
+     */
+    public function isRegistered(string $handle, string $type) : bool
+    {
+        $type = strtolower(trim($type));
+        if (!isset($this->assets[$type], $this->assets[$type][$handle])) {
+            // also use wordpress core
+            return $type === 'js'
+                ? wp_script_is($handle, 'registered')
+                : ($type === 'css' && wp_style_is($handle, 'registered'));
+        }
+
+        return true;
+    }
+
+    /**
      * Register asset.
      *
      * @param string $handle
@@ -238,7 +256,7 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
         $asset['deps'] = $asset['deps']??[];
         $asset['deps'] = is_string($asset['deps']) ? [$asset['deps']] : $asset['deps'];
         $asset['deps'] = !is_array($asset['deps']) ? [] : $asset['deps'];
-        $asset['ver'] = $asset['ver']??false;
+        $asset['ver'] = $asset['ver']??($asset['version']??null);
         $asset['ver'] = !is_string($asset['ver']) || trim($asset['ver']) === '' ? false : $asset['ver'];
         $asset['type'] = $asset['type']??null;
         $asset['attributes'] = $asset['attributes']??[];
@@ -312,6 +330,7 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
             }
         }
 
+        $this->registerAssets();
         $action = 'init';
         $callback = function () use ($action, &$callback, $handle, $type) {
             remove_action($action, $callback, 99999);
@@ -481,7 +500,7 @@ final class DefaultAssets extends AbstractService implements InitServiceInterfac
                     'strategy' => 'async',
                 ],
             ],
-            'flatpickr' => [
+            'flatpickr-bundle' => [
                 'src' => '{{dist_url}}/vendor/flatpickr/flatpickr.bundle.min.js',
                 'deps' => [],
                 'ver' => '4.6.13',

@@ -15,6 +15,7 @@ class MultiCheckbox extends AbstractField implements MultipleFieldInterface, For
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
+        build as protected buildMultiField;
     }
 
     /**
@@ -112,5 +113,13 @@ class MultiCheckbox extends AbstractField implements MultipleFieldInterface, For
         }
 
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    {
+        return $this->buildMultiField($inline, $wrapper, null);
     }
 }

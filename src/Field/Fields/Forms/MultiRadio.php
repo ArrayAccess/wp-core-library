@@ -15,6 +15,7 @@ class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFi
 {
     use MultiFieldSetterTrait {
         addField as protected addValue;
+        build as protected buildMultiField;
     }
 
     /**
@@ -105,5 +106,13 @@ class MultiRadio extends AbstractField implements MultipleFieldInterface, FormFi
         }
 
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    {
+        return $this->buildMultiField($inline, $wrapper, null);
     }
 }

@@ -34,15 +34,6 @@ interface FieldInterface extends Stringable
     public function getId() : string;
 
     /**
-     * Set the date format
-     * @link https://www.php.net/manual/en/datetime.format.php
-     *
-     * @param string $format
-     * @return $this
-     */
-    public function setDateFormat(string $format): static;
-
-    /**
      * Get the date format
      */
     public function getDateFormat(): string;

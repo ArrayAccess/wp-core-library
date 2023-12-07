@@ -49,6 +49,14 @@ class DivSection extends AbstractField implements
     protected array $disallowRemoveAttributes = [];
 
     /**
+     * @inheritdoc
+     */
+    protected function useCurrentLabel(): bool
+    {
+        return false;
+    }
+
+    /**
      * @return bool form is inline
      */
     public function isInline(): bool

@@ -17,7 +17,9 @@ use function spl_object_hash;
  */
 class MultiInput extends AbstractField implements MultipleFieldSetterInterface, FormFieldTypeInterface
 {
-    use MultiFieldSetterTrait;
+    use MultiFieldSetterTrait {
+        build as protected buildMultiField;
+    }
 
     /**
      * @var string The tag name.
@@ -72,5 +74,13 @@ class MultiInput extends AbstractField implements MultipleFieldSetterInterface, 
         }
 
         return null;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function build(?bool $inline = null, mixed $wrapper = 'div'): string
+    {
+        return $this->buildMultiField($inline, $wrapper, null);
     }
 }

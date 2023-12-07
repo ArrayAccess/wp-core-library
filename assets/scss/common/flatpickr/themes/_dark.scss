@@ -1,45 +1,28 @@
 @import "../../../mixins";
 
-$dark-font-color: #f9f9f9;
-$dark-font-hover-color: #fff;
-$dark-darker-color: #1e1e1e;
-$dark-bg-color: #2e2e2e;
-$dark-end-range-bg-color: #1f1f1f;
-$dark-bg-selected-color: rgba(0,0,0,.8);
-$dark-bg-hover-color: rgba(0,0,0,.35);
-$dark-bg-hover-darker-color: rgba(0,0,0,.45);
-
+/* --------------------------------
+ * DARK THEME
+ * --------------------------------
+ */
 .theme-dark {
-
-
-
-
-
-
-
-
-
-
-
     @include themeRootVariable(
-        "fff", // $base-color-hex,
-        "0, 0, 0", //    $rgb-box-shadow,
-        #fff,     //    $base-color,
-        #2e2e2e,     //    $base-bg-color,
-        #1e1e1e,     //    $base-active-bg-color,
-        #fff,     //    $base-active-hover-bg-color,
-        #262626,     //    $base-light-hover-color,
-        #bbb,    //    $base-lighter-color,
-        #2e2e2e,     //    $base-active-color,
-        #777,    //    $base-lighten-color,
-        #999,     //    $base-disabled-color,
-        #262626, //    $base-end-range-color
-        #999, //    $base-end-range-border-color
-        #fff, //   $base-today-color
-        #fff, //    $base-today-in-range-color
-        #1e1e1e, //    $base-today-in-range-bg-color
-        #2e2e2e, //    $base-next-month-bg-color
-        #fff //    $base-next-color
+                    "fff", // $base-color-hex,
+                    "0, 0, 0", //    $rgb-box-shadow,
+                    #fff, //    $base-color,
+                    #2e2e2e, //    $base-bg-color,
+                    #1e1e1e, //    $base-active-bg-color,
+                    #fff, //    $base-active-hover-bg-color,
+                    #262626, //    $base-light-hover-color,
+                    #bbb, //    $base-lighter-color,
+                    #2e2e2e, //    $base-active-color,
+                    #777, //    $base-lighten-color,
+                    #999, //    $base-disabled-color,
+                    #262626, //    $base-end-range-color
+                    #999, //    $base-end-range-border-color
+                    #fff, //   $base-today-color
+                    #fff, //    $base-today-in-range-color
+                    #1e1e1e, //    $base-today-in-range-bg-color
+                    #2e2e2e, //    $base-next-month-bg-color
+                    #fff //    $base-next-color
     );
-
 }
